@@ -1,7 +1,6 @@
-To build, just build the .sln in VS 2017. A distribution zip will be created in a `dist` directory at the root of the repo.
+To build, build 1.6.csproj in VS 2022. The project is designed to be able to worked on and built inside the RimWorld Mods folder.
 
-Before a release, update `AssemblyInfo.cs` in the project directory to increase the patch number (3rd version field) of `AssemblyVersion` and `AssemblyFileVersion` by one. If the a Steam installation of RimWorld is detected, the major & minor version fields of `AssemblyInfo.cs` and the `targetVersion` field of `mod-structure\About\About.xml` will be updated automatically. If a Steam installation is not detected, these must be updated manually.
+Before a release, update `AssemblyInfo.cs` in the project directory to increase the patch number (3rd version field) of `AssemblyVersion` and `AssemblyFileVersion` by one. 
+The major & minor version fields of `AssemblyInfo.cs` and the `targetVersion` field of `mod-structure\About\About.xml` must be updated manually.
 
-HugsLib dependencies are fetched via NuGet and the RimWorld and Unity assemblies will be copied out of the game's Steam directory if found. The output will automatically be copied into the game's mod directory if a Steam installation of the game is detected.
-
-If you are not using Steam, create a `ThirdParty` directory at the root of the repository and copy `Assembly-CSharp.dll` and `UnityEngine.dll` from the game into there.
+Rimworld references as well as Harmony and HugsLib dependencies are fetched via NuGet.
