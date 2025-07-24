@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <ModMetaData>
-  <name>Avoid Friendly Fire</name>
+  <name>Avoid Friendly Fire - 1.6</name>
   <packageId>falconne.AFF</packageId>
   <author>Falconne</author>
   <description>Adds an new shooting mode for ranged colonists that tells them not to shoot if there are friendlies in harms way.</description>
