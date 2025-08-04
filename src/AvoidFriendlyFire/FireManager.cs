@@ -30,41 +30,39 @@ namespace AvoidFriendlyFire
                 return true;
 
             var map = fireProperties.CasterMap;
-            foreach (var pawn in map.mapPawns.AllPawns)
+            foreach (int cellIndex in fireCone)
             {
-                if (pawn?.RaceProps == null || pawn.Dead)
+                var cell = map.cellIndices.IndexToCell(cellIndex);
+                if (cell == fireProperties.Origin || cell == fireProperties.Target)
                     continue;
 
-                if (pawn.Faction == null)
-                    continue;
-
-                if (pawn.RaceProps.Humanlike)
+                var thingsInCell = map.thingGrid.ThingsListAt(cell);
+                for (int i = 0; i < thingsInCell.Count; i++)
                 {
-                    if (pawn.IsPrisoner)
+                    Pawn pawn = thingsInCell[i] as Pawn;
+                    if (pawn == null || pawn.RaceProps == null || pawn.Dead)
                         continue;
 
-                    if (pawn.HostileTo(Faction.OfPlayer))
+                    if (pawn.Faction == null)
                         continue;
+
+                    if (pawn.RaceProps.Humanlike)
+                    {
+                        if (pawn.IsPrisoner || pawn.HostileTo(Faction.OfPlayer))
+                            continue;
+                    }
+                    else if (!ShouldProtectAnimal(pawn))
+                    {
+                        continue;
+                    }
+
+                    if (IsPawnWearingUsefulShield(pawn))
+                        continue;
+
+                    Main.Instance.PawnStatusTracker.AddBlockedShooter(fireProperties.Caster, pawn);
+
+                    return false;
                 }
-                else if (!ShouldProtectAnimal(pawn))
-                {
-                    continue;
-                }
-
-                var pawnCell = pawn.Position;
-                if (pawnCell == fireProperties.Origin || pawnCell == fireProperties.Target)
-                    continue;
-
-                var pawnIndex = map.cellIndices.CellToIndex(pawnCell);
-                if (!fireCone.Contains(pawnIndex))
-                    continue;
-
-                if (IsPawnWearingUsefulShield(pawn))
-                    continue;
-
-                Main.Instance.PawnStatusTracker.AddBlockedShooter(fireProperties.Caster, pawn);
-
-                return false;
             }
 
             return true;
