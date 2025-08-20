@@ -14,19 +14,22 @@ namespace AvoidFriendlyFire
 
             fireProperties.AdjustForLeaning();
 
-            var missAreaDescriptor = fireProperties.GetMissAreaDescriptor();
+            // Compute original and optimized cones side-by-side for verification.
+            var originalDescriptor = fireProperties.GetMissAreaDescriptor();
+            var optimizedDescriptor = fireProperties.GetMissAreaDescriptorOptimized();
 
-            var result = new HashSet<int>();
-            result.Clear();
-            var map = Find.CurrentMap;
-            for (var i = 0; i < missAreaDescriptor.AdjustmentCount; i++)
+            var originalCone = ComputeFireConeFromDescriptor(fireProperties, originalDescriptor, false);
+            var optimizedCone = ComputeFireConeFromDescriptor(fireProperties, optimizedDescriptor, true);
+
+            if (!originalCone.SetEquals(optimizedCone))
             {
-                var splashTarget = fireProperties.Target + missAreaDescriptor.AdjustmentVector[i];
-                result.UnionWith(GetShootablePointsBetween(fireProperties.Origin, splashTarget, map));
+                var onlyInOriginal = originalCone.Count(idx => !optimizedCone.Contains(idx));
+                var onlyInOptimized = optimizedCone.Count(idx => !originalCone.Contains(idx));
+                Log.Warning($"AvoidFriendlyFire: Optimized fire cone differs from original. Original={originalCone.Count}, Optimized={optimizedCone.Count}, OnlyInOriginal={onlyInOriginal}, OnlyInOptimized={onlyInOptimized}");
             }
 
-
-            return result;
+            // Preserve current behavior by returning the original result for now.
+            return originalCone;
         }
 
         private static IEnumerable<int> GetShootablePointsBetween(
@@ -76,6 +79,36 @@ namespace AvoidFriendlyFire
             }
 
             return false;
+        }
+
+        private static HashSet<int> ComputeFireConeFromDescriptor(
+            FireProperties fireProperties,
+            MissAreaDescriptor missAreaDescriptor,
+            bool applyFarSideFilter)
+        {
+            var result = new HashSet<int>();
+            var map = Find.CurrentMap;
+
+            // Vector from target to origin for far-side checks
+            IntVec3 centerToOrigin = fireProperties.Origin - fireProperties.Target;
+
+            for (var i = 0; i < missAreaDescriptor.AdjustmentCount; i++)
+            {
+                var offset = missAreaDescriptor.AdjustmentVector[i];
+                var splashTarget = fireProperties.Target + offset;
+
+                if (applyFarSideFilter)
+                {
+                    IntVec3 centerToSample = splashTarget - fireProperties.Target;
+                    long dot = (long)centerToOrigin.x * centerToSample.x + (long)centerToOrigin.z * centerToSample.z;
+                    if (dot > 0)
+                        continue; // Skip near-side samples
+                }
+
+                result.UnionWith(GetShootablePointsBetween(fireProperties.Origin, splashTarget, map));
+            }
+
+            return result;
         }
     }
 }
