@@ -158,15 +158,17 @@ namespace AvoidFriendlyFire
 
             if (adjustedMissRadius > 0.5f)
             {
-                // Use a 1-tile hollow ring at the outer edge of forced miss radius
-                var outer = GenRadial.NumCellsInRadius(ForcedMissRadius);
-                var innerRadius = ForcedMissRadius - 1f;
+                // Build a hollow ring with adjustable thickness at the outer edge of forced miss radius
+                int ringWidthCells = Main.Instance.GetMinCheckedDiskWidth();
+                if (ringWidthCells < 1) ringWidthCells = 1;
+                float innerRadius = ForcedMissRadius - ringWidthCells;
                 if (innerRadius < 0f) innerRadius = 0f;
-                var inner = GenRadial.NumCellsInRadius(innerRadius);
-                var count = outer - inner;
-                var ring = new IntVec3[count];
-                Array.Copy(GenRadial.RadialPattern, inner, ring, 0, count);
-                return new MissAreaDescriptor(ring, count);
+                int forcedMissOuterCount = GenRadial.NumCellsInRadius(ForcedMissRadius);
+                int forcedMissInnerCount = GenRadial.NumCellsInRadius(innerRadius);
+                int forcedMissRingCount = forcedMissOuterCount - forcedMissInnerCount;
+                var forcedMissRingOffsets = new IntVec3[forcedMissRingCount];
+                Array.Copy(GenRadial.RadialPattern, forcedMissInnerCount, forcedMissRingOffsets, 0, forcedMissRingCount);
+                return new MissAreaDescriptor(forcedMissRingOffsets, forcedMissRingCount);
             }
 
             if (!Main.Instance.ShouldEnableAccurateMissRadius())
@@ -181,12 +183,14 @@ namespace AvoidFriendlyFire
             if (missRadius < 0)
                 return new MissAreaDescriptor(GenAdj.AdjacentCells, 8);
 
-            // Use a 1-tile hollow ring at the outer edge of computed miss radius
-            var outerCount = GenRadial.NumCellsInRadius(missRadius);
-            var innerMissRadius = missRadius - 1f;
+            // Use a hollow ring with adjustable thickness at the outer edge of computed miss radius
+            int minRingWidthCells = Main.Instance.GetMinCheckedDiskWidth();
+            if (minRingWidthCells < 1) minRingWidthCells = 1;
+            float innerMissRadius = missRadius - minRingWidthCells;
             if (innerMissRadius < 0f) innerMissRadius = 0f;
-            var innerCount = GenRadial.NumCellsInRadius(innerMissRadius);
-            var ringCount = outerCount - innerCount;
+            int outerCount = GenRadial.NumCellsInRadius(missRadius);
+            int innerCount = GenRadial.NumCellsInRadius(innerMissRadius);
+            int ringCount = outerCount - innerCount;
             var ringOffsets = new IntVec3[ringCount];
             Array.Copy(GenRadial.RadialPattern, innerCount, ringOffsets, 0, ringCount);
             return new MissAreaDescriptor(ringOffsets, ringCount);

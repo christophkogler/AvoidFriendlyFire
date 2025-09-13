@@ -38,6 +38,10 @@ namespace AvoidFriendlyFire
 
         private SettingHandle<bool> _enableAccurateMissRadius;
 
+        private SettingHandle<bool> _useFarSideFilter;
+
+        private SettingHandle<int> _minCheckedDiskWidth;
+
         public Main()
         {
             Instance = this;
@@ -106,6 +110,17 @@ namespace AvoidFriendlyFire
                 "FALCFF.EnableAccurateMissRadiusDesc".Translate(),
                 true);
 
+            _useFarSideFilter = Settings.GetHandle(
+                "useFarSideFilter", "FALCFF.UseFarSideFilter".Translate(),
+                "FALCFF.UseFarSideFilterDesc".Translate(),
+                false);
+
+            _minCheckedDiskWidth = Settings.GetHandle(
+                "minCheckedDiskWidth", "FALCFF.MinCheckedDiskWidth".Translate(),
+                "FALCFF.MinCheckedDiskWidthDesc".Translate(),
+                2);
+            _minCheckedDiskWidth.CustomDrawer = null; // use default numeric drawer
+
             try
             {
                 var ceVerb = GenTypes.GetTypeInAnyAssembly("CombatExtended.Verb_LaunchProjectileCE");
@@ -159,6 +174,20 @@ namespace AvoidFriendlyFire
         public bool ShouldEnableAccurateMissRadius()
         {
             return _enableAccurateMissRadius;
+        }
+
+        public bool ShouldUseFarSideFilter()
+        {
+            return _useFarSideFilter;
+        }
+
+        public int GetMinCheckedDiskWidth()
+        {
+            // Clamp to sane range [1..20] to avoid degenerate rings
+            int width = _minCheckedDiskWidth;
+            if (width < 1) width = 1;
+            if (width > 20) width = 20;
+            return width;
         }
 
         public static Pawn GetSelectedPawn()
