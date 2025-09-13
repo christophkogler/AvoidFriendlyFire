@@ -20,4 +20,10 @@
 
   <FALCFF.EnableAccurateMissRadius>Use accurate miss radius</FALCFF.EnableAccurateMissRadius>
   <FALCFF.EnableAccurateMissRadiusDesc>Low skill shooters have a larger miss radius than higher skilled ones and this mod accounts for that. If this setting is disabled, the mod will assume a one tile miss radius for all shooters, which will be more lenient to low skill shooters but may result in more friendly fire hits.</FALCFF.EnableAccurateMissRadiusDesc>
+
+  <FALCFF.UseFarSideFilter>Use far-side filter</FALCFF.UseFarSideFilter>
+  <FALCFF.UseFarSideFilterDesc>Only sample miss offsets on the far side of the target relative to the shooter. Can reduce checks but may miss rare lines of fire.</FALCFF.UseFarSideFilterDesc>
+
+  <FALCFF.MinCheckedDiskWidth>Minimum checked disk width (cells)</FALCFF.MinCheckedDiskWidth>
+  <FALCFF.MinCheckedDiskWidthDesc>Thickness of the outer ring of offsets to check. Larger values increase accuracy but may impact performance. When this width is greater than or equal to the miss radius, the full disk is checked.</FALCFF.MinCheckedDiskWidthDesc>
 </LanguageData>

@@ -164,7 +164,8 @@ namespace AvoidFriendlyFire
                 float innerRadius = ForcedMissRadius - ringWidthCells;
                 if (innerRadius < 0f) innerRadius = 0f;
                 int forcedMissOuterCount = GenRadial.NumCellsInRadius(ForcedMissRadius);
-                int forcedMissInnerCount = GenRadial.NumCellsInRadius(innerRadius);
+                // If inner radius collapses to 0 or less, include center by starting from index 0
+                int forcedMissInnerCount = innerRadius <= 0f ? 0 : GenRadial.NumCellsInRadius(innerRadius);
                 int forcedMissRingCount = forcedMissOuterCount - forcedMissInnerCount;
                 var forcedMissRingOffsets = new IntVec3[forcedMissRingCount];
                 Array.Copy(GenRadial.RadialPattern, forcedMissInnerCount, forcedMissRingOffsets, 0, forcedMissRingCount);
@@ -189,7 +190,8 @@ namespace AvoidFriendlyFire
             float innerMissRadius = missRadius - minRingWidthCells;
             if (innerMissRadius < 0f) innerMissRadius = 0f;
             int outerCount = GenRadial.NumCellsInRadius(missRadius);
-            int innerCount = GenRadial.NumCellsInRadius(innerMissRadius);
+            // If inner radius collapses to 0 or less, include center by starting from index 0
+            int innerCount = innerMissRadius <= 0f ? 0 : GenRadial.NumCellsInRadius(innerMissRadius);
             int ringCount = outerCount - innerCount;
             var ringOffsets = new IntVec3[ringCount];
             Array.Copy(GenRadial.RadialPattern, innerCount, ringOffsets, 0, ringCount);
