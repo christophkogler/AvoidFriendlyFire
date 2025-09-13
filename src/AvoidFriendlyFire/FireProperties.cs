@@ -128,36 +128,6 @@ namespace AvoidFriendlyFire
 
             if (adjustedMissRadius > 0.5f)
             {
-                // Create fire cone using weapon miss radius
-                return new MissAreaDescriptor(
-                    GenRadial.RadialPattern,
-                    GenRadial.NumCellsInRadius(ForcedMissRadius));
-            }
-
-            if (!Main.Instance.ShouldEnableAccurateMissRadius())
-            {
-                // Create fire cone using target and the 8 cells adjacent to target
-                return new MissAreaDescriptor(GenAdj.AdjacentCells, 8);
-            }
-
-            var missRadius = ShootTuning.MissDistanceFromAimOnChanceCurves.Evaluate(
-                GetAimOnTargetChance(), 1f);
-
-            if (missRadius < 0)
-                return new MissAreaDescriptor(GenAdj.AdjacentCells, 8);
-
-            return new MissAreaDescriptor(
-                GenRadial.RadialPattern,
-                GenRadial.NumCellsInRadius(missRadius));
-
-        }
-
-        public MissAreaDescriptor GetMissAreaDescriptorOptimized()
-        {
-            var adjustedMissRadius = CalculateAdjustedForcedMiss();
-
-            if (adjustedMissRadius > 0.5f)
-            {
                 // Build a hollow ring with adjustable thickness at the outer edge of forced miss radius
                 int ringWidthCells = Main.Instance.GetMinCheckedDiskWidth();
                 if (ringWidthCells < 1) ringWidthCells = 1;
@@ -197,6 +167,8 @@ namespace AvoidFriendlyFire
             Array.Copy(GenRadial.RadialPattern, innerCount, ringOffsets, 0, ringCount);
             return new MissAreaDescriptor(ringOffsets, ringCount);
         }
+
+        
 
         private float CalculateAdjustedForcedMiss()
         {

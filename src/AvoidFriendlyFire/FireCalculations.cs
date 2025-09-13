@@ -14,24 +14,10 @@ namespace AvoidFriendlyFire
 
             fireProperties.AdjustForLeaning();
 
-            // Compute original and optimized cones side-by-side for verification.
-            var originalDescriptor = fireProperties.GetMissAreaDescriptor();
-            var optimizedDescriptor = fireProperties.GetMissAreaDescriptorOptimized();
-
-            var originalCone = ComputeFireConeFromDescriptor(fireProperties, originalDescriptor, false);
+            // Build descriptor using optimized logic and compute cone once
+            var descriptor = fireProperties.GetMissAreaDescriptor();
             var applyFarSideFilter = Main.Instance.ShouldUseFarSideFilter();
-            var optimizedCone = ComputeFireConeFromDescriptor(fireProperties, optimizedDescriptor, applyFarSideFilter);
-
-            if (!originalCone.SetEquals(optimizedCone))
-            {
-                var onlyInOriginal = originalCone.Count(idx => !optimizedCone.Contains(idx));
-                var onlyInOptimized = optimizedCone.Count(idx => !originalCone.Contains(idx));
-                Log.Warning($"AvoidFriendlyFire: Optimized fire cone differs from original. Original={originalCone.Count}, Optimized={optimizedCone.Count}, OnlyInOriginal={onlyInOriginal}, OnlyInOptimized={onlyInOptimized}, FarSideFilter={applyFarSideFilter}, RingWidth={Main.Instance.GetMinCheckedDiskWidth()}");
-                return originalCone;
-            }
-
-            // Return optimized when it matches original to validate optimized path in use.
-            return optimizedCone;
+            return ComputeFireConeFromDescriptor(fireProperties, descriptor, applyFarSideFilter);
         }
 
         private static IEnumerable<int> GetShootablePointsBetween(
