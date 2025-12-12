@@ -15,8 +15,8 @@ namespace AvoidFriendlyFire
         public bool IgnoreShieldedPawns = true;
         public bool EnableWhenUndrafted;
         public bool EnableAccurateMissRadius = true;
-        public bool UseFarSideFilter;
-        public int MinCheckedDiskWidth = 2;
+        public bool UseFarSideFilter = true;
+        public int MinCheckedDiskWidth = 1;
 
         public override void ExposeData()
         {
@@ -28,8 +28,8 @@ namespace AvoidFriendlyFire
             Scribe_Values.Look(ref IgnoreShieldedPawns, "ignoreShieldedPawns", true);
             Scribe_Values.Look(ref EnableWhenUndrafted, "enableWhenUndrafted");
             Scribe_Values.Look(ref EnableAccurateMissRadius, "enableAccurateMissRadius", true);
-            Scribe_Values.Look(ref UseFarSideFilter, "useFarSideFilter");
-            Scribe_Values.Look(ref MinCheckedDiskWidth, "minCheckedDiskWidth", 2);
+            Scribe_Values.Look(ref UseFarSideFilter, "useFarSideFilter", true);
+            Scribe_Values.Look(ref MinCheckedDiskWidth, "minCheckedDiskWidth", 1);
         }
     }
 
