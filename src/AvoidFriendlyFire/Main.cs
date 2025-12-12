@@ -10,6 +10,7 @@ namespace AvoidFriendlyFire
     {
         public bool ModEnabled = true;
         public bool ShowOverlay = true;
+        public bool PerfLoggingEnabled;
         public bool ProtectPets = true;
         public bool ProtectColonyAnimals;
         public bool IgnoreShieldedPawns = true;
@@ -23,6 +24,7 @@ namespace AvoidFriendlyFire
             base.ExposeData();
             Scribe_Values.Look(ref ModEnabled, "enabled", true);
             Scribe_Values.Look(ref ShowOverlay, "showOverlay", true);
+            Scribe_Values.Look(ref PerfLoggingEnabled, "perfLoggingEnabled");
             Scribe_Values.Look(ref ProtectPets, "protectPets", true);
             Scribe_Values.Look(ref ProtectColonyAnimals, "protectColonyAnimals");
             Scribe_Values.Look(ref IgnoreShieldedPawns, "ignoreShieldedPawns", true);
@@ -52,6 +54,7 @@ namespace AvoidFriendlyFire
             Instance = this;
             _settings = GetSettings<AvoidFriendlyFireSettings>();
             _fireManager = new FireManager();
+            PerfMetrics.SetEnabled(_settings.PerfLoggingEnabled);
 
             _harmony = new Harmony("falconne.AvoidFriendlyFire");
             _harmony.PatchAll();
@@ -72,6 +75,8 @@ namespace AvoidFriendlyFire
                 "FALCFF.EnableModDesc".Translate());
             listing.CheckboxLabeled("FALCFF.ShowTargetingOverlay".Translate(), ref _settings.ShowOverlay,
                 "FALCFF.ShowTargetingOverlayDesc".Translate());
+            listing.CheckboxLabeled("Perf logging (avg over 60 ticks)", ref _settings.PerfLoggingEnabled,
+                "Writes 1 line to the log per 60 ticks with per-section timings.");
             listing.CheckboxLabeled("FALCFF.ProtectPets".Translate(), ref _settings.ProtectPets,
                 "FALCFF.ProtectPetsDesc".Translate());
             listing.CheckboxLabeled("FALCFF.ProtectColonyAnimals".Translate(), ref _settings.ProtectColonyAnimals,
@@ -94,6 +99,8 @@ namespace AvoidFriendlyFire
                     null, "1", "20"));
 
             listing.End();
+
+            PerfMetrics.SetEnabled(_settings.PerfLoggingEnabled);
         }
 
         public void OnWorldTick(int currentTick)
@@ -101,9 +108,27 @@ namespace AvoidFriendlyFire
             if (!IsModEnabled())
                 return;
 
-            GetFireManager().RemoveExpiredCones(currentTick);
-            PawnStatusTracker.RemoveExpired();
-            TrackMapChange();
+            var worldTickScope = PerfMetrics.Measure(PerfSection.WorldTick);
+            try
+            {
+                PerfMetrics.OnWorldTick(currentTick);
+
+                var removeExpiredConesScope = PerfMetrics.Measure(PerfSection.RemoveExpiredCones);
+                try { GetFireManager().RemoveExpiredCones(currentTick); }
+                finally { removeExpiredConesScope.Dispose(); }
+
+                var pawnStatusRemoveExpiredScope = PerfMetrics.Measure(PerfSection.PawnStatusRemoveExpired);
+                try { PawnStatusTracker.RemoveExpired(); }
+                finally { pawnStatusRemoveExpiredScope.Dispose(); }
+
+                var trackMapChangeScope = PerfMetrics.Measure(PerfSection.TrackMapChange);
+                try { TrackMapChange(); }
+                finally { trackMapChangeScope.Dispose(); }
+            }
+            finally
+            {
+                worldTickScope.Dispose();
+            }
         }
 
         private void TrackMapChange()
@@ -148,6 +173,9 @@ namespace AvoidFriendlyFire
             if (!IsModEnabled() || !_settings.ShowOverlay)
                 return;
 
+            var scope = PerfMetrics.Measure(PerfSection.UpdateFireConeOverlay);
+            try
+            {
             if (Find.CurrentMap == null)
                 return;
 
@@ -156,6 +184,11 @@ namespace AvoidFriendlyFire
                 _fireConeOverlay = new FireConeOverlay();
             }
             _fireConeOverlay.Update(enabled);
+            }
+            finally
+            {
+                scope.Dispose();
+            }
         }
 
         public bool ShouldProtectPets()

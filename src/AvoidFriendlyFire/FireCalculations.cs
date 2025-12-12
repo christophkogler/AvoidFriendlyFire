@@ -9,6 +9,9 @@ namespace AvoidFriendlyFire
     {
         public static HashSet<int> GetFireCone(FireProperties fireProperties)
         {
+            var getFireConeScope = PerfMetrics.Measure(PerfSection.GetFireCone);
+            try
+            {
             if (!fireProperties.ArePointsVisibleAndValid())
                 return null;
 
@@ -18,6 +21,11 @@ namespace AvoidFriendlyFire
             var descriptor = fireProperties.GetMissAreaDescriptor();
             var applyFarSideFilter = Main.Instance.ShouldUseFarSideFilter();
             return ComputeFireConeFromDescriptor(fireProperties, descriptor, applyFarSideFilter);
+            }
+            finally
+            {
+                getFireConeScope.Dispose();
+            }
         }
 
         private static void AddShootablePointsBetween(
@@ -26,6 +34,9 @@ namespace AvoidFriendlyFire
             Map map,
             HashSet<int> destinationCellIndices)
         {
+            var scope = PerfMetrics.Measure(PerfSection.AddShootablePointsBetween);
+            try
+            {
             var cellIndices = map.cellIndices;
 
             foreach (var point in GenSight.PointsOnLineOfSight(origin, target))
@@ -41,6 +52,11 @@ namespace AvoidFriendlyFire
 
             if (!IsAdjacent(origin, target))
                 destinationCellIndices.Add(cellIndices.CellToIndex(target.x, target.z));
+            }
+            finally
+            {
+                scope.Dispose();
+            }
         }
 
         private static bool IsInCloseRange(IntVec3 origin, IntVec3 point)
@@ -76,29 +92,37 @@ namespace AvoidFriendlyFire
             MissAreaDescriptor missAreaDescriptor,
             bool applyFarSideFilter)
         {
-            var result = new HashSet<int>();
-            var map = fireProperties.CasterMap;
-
-            // Vector from target to origin for far-side checks
-            IntVec3 centerToOrigin = fireProperties.Origin - fireProperties.Target;
-
-            for (var i = 0; i < missAreaDescriptor.AdjustmentCount; i++)
+            var scope = PerfMetrics.Measure(PerfSection.ComputeFireCone);
+            try
             {
-                var offset = missAreaDescriptor.AdjustmentVector[i];
-                var splashTarget = fireProperties.Target + offset;
+                var result = new HashSet<int>();
+                var map = fireProperties.CasterMap;
 
-                if (applyFarSideFilter)
+                // Vector from target to origin for far-side checks
+                IntVec3 centerToOrigin = fireProperties.Origin - fireProperties.Target;
+
+                for (var i = 0; i < missAreaDescriptor.AdjustmentCount; i++)
                 {
-                    IntVec3 centerToSample = splashTarget - fireProperties.Target;
-                    long dot = (long)centerToOrigin.x * centerToSample.x + (long)centerToOrigin.z * centerToSample.z;
-                    if (dot > 0)
-                        continue; // Skip near-side samples
+                    var offset = missAreaDescriptor.AdjustmentVector[i];
+                    var splashTarget = fireProperties.Target + offset;
+
+                    if (applyFarSideFilter)
+                    {
+                        IntVec3 centerToSample = splashTarget - fireProperties.Target;
+                        long dot = (long)centerToOrigin.x * centerToSample.x + (long)centerToOrigin.z * centerToSample.z;
+                        if (dot > 0)
+                            continue; // Skip near-side samples
+                    }
+
+                    AddShootablePointsBetween(fireProperties.Origin, splashTarget, map, result);
                 }
 
-                AddShootablePointsBetween(fireProperties.Origin, splashTarget, map, result);
+                return result;
             }
-
-            return result;
+            finally
+            {
+                scope.Dispose();
+            }
         }
     }
 }

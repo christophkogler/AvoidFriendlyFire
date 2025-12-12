@@ -9,6 +9,9 @@ namespace AvoidFriendlyFire
     {
         public static void Postfix(ref Targeter __instance)
         {
+            var scope = PerfMetrics.Measure(PerfSection.Patch_Targeter_TargeterUpdate);
+            try
+            {
             if (!Main.Instance.IsModEnabled())
                 return;
 
@@ -26,6 +29,11 @@ namespace AvoidFriendlyFire
                 return;
 
             Main.Instance.UpdateFireConeOverlay(true);
+            }
+            finally
+            {
+                scope.Dispose();
+            }
         }
     }
 }

@@ -10,6 +10,9 @@ namespace AvoidFriendlyFire
     {
         public static bool Prefix(IAttackTargetSearcher searcher, ref Predicate<Thing> validator)
         {
+            var scope = PerfMetrics.Measure(PerfSection.Patch_AttackTargetFinder_BestAttackTarget);
+            try
+            {
             if (!Main.Instance.IsModEnabled())
                 return true;
 
@@ -24,6 +27,11 @@ namespace AvoidFriendlyFire
                 new FireProperties(shooter, target.Position));
 
             return true;
+            }
+            finally
+            {
+                scope.Dispose();
+            }
         }
    }
 }

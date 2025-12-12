@@ -55,6 +55,9 @@ namespace AvoidFriendlyFire
 
         private bool ShouldUpdate()
         {
+            var scope = PerfMetrics.Measure(PerfSection.OverlayShouldUpdate);
+            try
+            {
             if (Mouse.IsInputBlockedNow)
                 return false;
 
@@ -66,10 +69,18 @@ namespace AvoidFriendlyFire
             }
 
             return false;
+            }
+            finally
+            {
+                scope.Dispose();
+            }
         }
 
         private void BuildFireCone()
         {
+            var scope = PerfMetrics.Measure(PerfSection.OverlayBuildFireCone);
+            try
+            {
             _fireCone = null;
             var pawn = Main.GetSelectedPawn();
             if (pawn == null)
@@ -85,6 +96,11 @@ namespace AvoidFriendlyFire
 
             var fireProperties = new FireProperties(pawn, targetCell);
             _fireCone = FireCalculations.GetFireCone(fireProperties);
+            }
+            finally
+            {
+                scope.Dispose();
+            }
         }
 
         public static float GetEquippedWeaponRange(Pawn pawn)

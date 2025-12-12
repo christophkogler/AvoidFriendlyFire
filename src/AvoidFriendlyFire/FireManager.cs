@@ -17,6 +17,9 @@ namespace AvoidFriendlyFire
 
         public bool CanHitTargetSafely(FireProperties fireProperties)
         {
+            var canHitTargetSafelyScope = PerfMetrics.Measure(PerfSection.CanHitTargetSafely);
+            try
+            {
             if (SkipNextCheck)
             {
                 SkipNextCheck = false;
@@ -66,6 +69,11 @@ namespace AvoidFriendlyFire
             }
 
             return true;
+            }
+            finally
+            {
+                canHitTargetSafelyScope.Dispose();
+            }
         }
 
         private bool IsPawnWearingUsefulShield(Pawn pawn)
@@ -136,6 +144,9 @@ namespace AvoidFriendlyFire
 
         private HashSet<int> GetOrCreatedCachedFireConeFor(FireProperties fireProperties)
         {
+            var scope = PerfMetrics.Measure(PerfSection.GetOrCreateCachedFireCone);
+            try
+            {
             var originIndex = fireProperties.OriginIndex;
             var targetIndex = fireProperties.TargetIndex;
 
@@ -160,6 +171,11 @@ namespace AvoidFriendlyFire
             _cachedFireCones[originIndex][targetIndex] = newFireCone;
 
             return newFireCone.FireCone;
+            }
+            finally
+            {
+                scope.Dispose();
+            }
         }
     }
 }

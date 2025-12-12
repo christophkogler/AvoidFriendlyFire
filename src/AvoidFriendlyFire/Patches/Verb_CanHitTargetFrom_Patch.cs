@@ -9,6 +9,9 @@ namespace AvoidFriendlyFire
         public static void Postfix(ref Verb __instance, ref bool __result, IntVec3 root,
             LocalTargetInfo targ)
         {
+            var scope = PerfMetrics.Measure(PerfSection.Patch_Verb_CanHitTargetFrom);
+            try
+            {
             if (!Main.Instance.IsModEnabled())
                 return;
 
@@ -27,6 +30,11 @@ namespace AvoidFriendlyFire
 
             __result = Main.Instance.GetFireManager().CanHitTargetSafely(
                 new FireProperties(pawn, targ.Cell));
+            }
+            finally
+            {
+                scope.Dispose();
+            }
         }
     }
 }
