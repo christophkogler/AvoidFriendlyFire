@@ -10,8 +10,8 @@ namespace AvoidFriendlyFire
     {
         public bool SkipNextCheck;
 
-        private readonly Dictionary<PerTickSafetyKey, bool> _perTickSafeShotCache =
-            new Dictionary<PerTickSafetyKey, bool>();
+        private readonly Dictionary<PerTickSafetyKey, PerTickSafetyResult> _perTickSafeShotCache =
+            new Dictionary<PerTickSafetyKey, PerTickSafetyResult>();
 
         private int _perTickCacheTick = -1;
 
@@ -36,13 +36,48 @@ namespace AvoidFriendlyFire
             EnsurePerTickCacheFresh();
 
             var perTickSafetyKey = CreatePerTickSafetyKey(fireProperties);
-            if (_perTickSafeShotCache.ContainsKey(perTickSafetyKey))
-                return true;
+            if (_perTickSafeShotCache.TryGetValue(perTickSafetyKey, out var cachedResult))
+            {
+                if (!cachedResult.IsSafe)
+                {
+                    var map = fireProperties.CasterMap;
+                    var pawns = map.mapPawns?.AllPawnsSpawned;
+                    if (pawns != null && cachedResult.BlockerPawnThingId != 0)
+                    {
+                        for (int i = 0; i < pawns.Count; i++)
+                        {
+                            var candidate = pawns[i];
+                            if (candidate != null && candidate.thingIDNumber == cachedResult.BlockerPawnThingId)
+                            {
+                                Main.Instance.PawnStatusTracker.AddBlockedShooter(fireProperties.Caster, candidate);
+                                break;
+                            }
+                        }
+                    }
+                }
 
-            HashSet<int> fireCone = GetOrCreatedCachedFireConeFor(fireProperties);
+                return cachedResult.IsSafe;
+            }
+
+            HashSet<int> cachedFireCone;
+            bool originAlreadyAdjusted = false;
+            if (!TryGetCachedFireConeFor(fireProperties, out cachedFireCone))
+            {
+                fireProperties.AdjustForLeaning();
+                originAlreadyAdjusted = true;
+
+                var approximateMissRadius = fireProperties.GetApproximateMissRadius();
+                if (!AreAnyRelevantPawnsInApproximateDangerZone(fireProperties, approximateMissRadius))
+                {
+                    _perTickSafeShotCache[perTickSafetyKey] = PerTickSafetyResult.Safe();
+                    return true;
+                }
+            }
+
+            HashSet<int> fireCone = cachedFireCone ?? GetOrCreatedCachedFireConeFor(fireProperties, originAlreadyAdjusted);
             if (fireCone == null)
             {
-                _perTickSafeShotCache[perTickSafetyKey] = true;
+                _perTickSafeShotCache[perTickSafetyKey] = PerTickSafetyResult.Safe();
                 return true;
             }
 
@@ -50,7 +85,7 @@ namespace AvoidFriendlyFire
             var allPawnsSpawned = map.mapPawns?.AllPawnsSpawned;
             if (allPawnsSpawned == null || allPawnsSpawned.Count == 0)
             {
-                _perTickSafeShotCache[perTickSafetyKey] = true;
+                _perTickSafeShotCache[perTickSafetyKey] = PerTickSafetyResult.Safe();
                 return true;
             }
 
@@ -93,16 +128,131 @@ namespace AvoidFriendlyFire
                     continue;
 
                 Main.Instance.PawnStatusTracker.AddBlockedShooter(shooterPawn, candidatePawn);
+                _perTickSafeShotCache[perTickSafetyKey] = PerTickSafetyResult.Unsafe(candidatePawn.thingIDNumber);
                 return false;
             }
 
-            _perTickSafeShotCache[perTickSafetyKey] = true;
+            _perTickSafeShotCache[perTickSafetyKey] = PerTickSafetyResult.Safe();
             return true;
             }
             finally
             {
                 canHitTargetSafelyScope.Dispose();
             }
+        }
+
+        private bool AreAnyRelevantPawnsInApproximateDangerZone(FireProperties fireProperties, float missRadiusCells)
+        {
+            var map = fireProperties.CasterMap;
+            var allPawnsSpawned = map.mapPawns?.AllPawnsSpawned;
+            if (allPawnsSpawned == null || allPawnsSpawned.Count == 0)
+                return false;
+
+            var shooterPawn = fireProperties.Caster;
+            var originCell = fireProperties.Origin;
+            var targetCell = fireProperties.Target;
+
+            var radiusToUse = missRadiusCells + 1.5f;
+            var radiusSquared = radiusToUse * radiusToUse;
+
+            for (int pawnIndex = 0; pawnIndex < allPawnsSpawned.Count; pawnIndex++)
+            {
+                Pawn candidatePawn = allPawnsSpawned[pawnIndex];
+                if (candidatePawn == null || candidatePawn.RaceProps == null || candidatePawn.Dead)
+                    continue;
+
+                if (candidatePawn == shooterPawn)
+                    continue;
+
+                if (candidatePawn.Position == originCell || candidatePawn.Position == targetCell)
+                    continue;
+
+                if (!IsCellWithinApproximateCapsule(originCell, targetCell, candidatePawn.Position, radiusSquared))
+                    continue;
+
+                var candidateFaction = candidatePawn.Faction;
+                if (candidateFaction == null)
+                    continue;
+
+                if (candidatePawn.RaceProps.Humanlike)
+                {
+                    if (candidatePawn.IsPrisoner || candidatePawn.HostileTo(Faction.OfPlayer))
+                        continue;
+                }
+                else if (!ShouldProtectAnimal(candidatePawn))
+                {
+                    continue;
+                }
+
+                if (IsPawnWearingUsefulShield(candidatePawn))
+                    continue;
+
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsCellWithinApproximateCapsule(IntVec3 originCell, IntVec3 targetCell, IntVec3 candidateCell, float radiusSquared)
+        {
+            float ox = originCell.x;
+            float oz = originCell.z;
+            float tx = targetCell.x;
+            float tz = targetCell.z;
+            float px = candidateCell.x;
+            float pz = candidateCell.z;
+
+            float vx = tx - ox;
+            float vz = tz - oz;
+            float wx = px - ox;
+            float wz = pz - oz;
+
+            float segmentLengthSquared = vx * vx + vz * vz;
+            if (segmentLengthSquared <= 0.0001f)
+            {
+                float dx = px - ox;
+                float dz = pz - oz;
+                return (dx * dx + dz * dz) <= radiusSquared;
+            }
+
+            float projection = wx * vx + wz * vz;
+            if (projection <= 0f)
+                return (wx * wx + wz * wz) <= radiusSquared;
+
+            if (projection >= segmentLengthSquared)
+            {
+                float dx = px - tx;
+                float dz = pz - tz;
+                return (dx * dx + dz * dz) <= radiusSquared;
+            }
+
+            float t = projection / segmentLengthSquared;
+            float closestX = ox + (t * vx);
+            float closestZ = oz + (t * vz);
+            float cx = px - closestX;
+            float cz = pz - closestZ;
+            return (cx * cx + cz * cz) <= radiusSquared;
+        }
+
+        private bool TryGetCachedFireConeFor(FireProperties fireProperties, out HashSet<int> fireCone)
+        {
+            fireCone = null;
+
+            var originIndex = fireProperties.OriginIndex;
+            var targetIndex = fireProperties.TargetIndex;
+
+            if (!_cachedFireCones.TryGetValue(originIndex, out var cachedFireConesFromOrigin))
+                return false;
+
+            if (!cachedFireConesFromOrigin.TryGetValue(targetIndex, out var cachedFireCone))
+                return false;
+
+            if (cachedFireCone.IsExpired())
+                return false;
+
+            cachedFireCone.Prolong();
+            fireCone = cachedFireCone.FireCone;
+            return true;
         }
 
         private void EnsurePerTickCacheFresh()
@@ -128,6 +278,28 @@ namespace AvoidFriendlyFire
                 shooterPositionIndex,
                 fireProperties.TargetIndex,
                 primaryWeaponId);
+        }
+
+        private readonly struct PerTickSafetyResult
+        {
+            public readonly bool IsSafe;
+            public readonly int BlockerPawnThingId;
+
+            private PerTickSafetyResult(bool isSafe, int blockerPawnThingId)
+            {
+                IsSafe = isSafe;
+                BlockerPawnThingId = blockerPawnThingId;
+            }
+
+            public static PerTickSafetyResult Safe()
+            {
+                return new PerTickSafetyResult(true, 0);
+            }
+
+            public static PerTickSafetyResult Unsafe(int blockerPawnThingId)
+            {
+                return new PerTickSafetyResult(false, blockerPawnThingId);
+            }
         }
 
         private bool IsPawnWearingUsefulShield(Pawn pawn)
@@ -250,7 +422,7 @@ namespace AvoidFriendlyFire
             }
         }
 
-        private HashSet<int> GetOrCreatedCachedFireConeFor(FireProperties fireProperties)
+        private HashSet<int> GetOrCreatedCachedFireConeFor(FireProperties fireProperties, bool originAlreadyAdjusted)
         {
             var scope = PerfMetrics.Measure(PerfSection.GetOrCreateCachedFireCone);
             try
@@ -271,7 +443,7 @@ namespace AvoidFriendlyFire
             }
 
             // No cached firecone, create one
-            var newFireCone = new CachedFireCone(FireCalculations.GetFireCone(fireProperties));
+            var newFireCone = new CachedFireCone(FireCalculations.GetFireCone(fireProperties, originAlreadyAdjusted));
 
             if (!_cachedFireCones.ContainsKey(originIndex))
                 _cachedFireCones.Add(originIndex, new Dictionary<int, CachedFireCone>());

@@ -9,13 +9,19 @@ namespace AvoidFriendlyFire
     {
         public static HashSet<int> GetFireCone(FireProperties fireProperties)
         {
+            return GetFireCone(fireProperties, false);
+        }
+
+        public static HashSet<int> GetFireCone(FireProperties fireProperties, bool originAlreadyAdjusted)
+        {
             var getFireConeScope = PerfMetrics.Measure(PerfSection.GetFireCone);
             try
             {
             if (!fireProperties.ArePointsVisibleAndValid())
                 return null;
 
-            fireProperties.AdjustForLeaning();
+            if (!originAlreadyAdjusted)
+                fireProperties.AdjustForLeaning();
 
             // Build descriptor using optimized logic and compute cone once
             var descriptor = fireProperties.GetMissAreaDescriptor();

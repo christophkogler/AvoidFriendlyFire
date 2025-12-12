@@ -116,6 +116,22 @@ namespace AvoidFriendlyFire
             return result;
         }
 
+        public float GetApproximateMissRadius()
+        {
+            var adjustedMissRadius = CalculateAdjustedForcedMiss();
+            if (adjustedMissRadius > 0.5f)
+                return ForcedMissRadius;
+
+            if (!Main.Instance.ShouldEnableAccurateMissRadius())
+                return 2f;
+
+            var missRadius = ShootTuning.MissDistanceFromAimOnChanceCurves.Evaluate(GetAimOnTargetChance(), 1f);
+            if (missRadius < 0f)
+                return 2f;
+
+            return missRadius;
+        }
+
         private bool HasClearShotFrom(IntVec3 tryFromOrigin)
         {
             var lineStarted = false;
