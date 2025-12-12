@@ -15,20 +15,16 @@ namespace AvoidFriendlyFire
             if (!Main.Instance.IsModEnabled())
                 return;
 
-            Main.Instance.UpdateFireConeOverlay(false);
-            if (__instance.targetingSource == null)
-                return;
+            var shouldEnableOverlay = false;
+            if (__instance.targetingSource != null &&
+                !__instance.targetingSource.IsMeleeAttack &&
+                __instance.targetingSource is Verb verb &&
+                verb.HighlightFieldRadiusAroundTarget(out _) <= 0.2f)
+            {
+                shouldEnableOverlay = true;
+            }
 
-            if (__instance.targetingSource.IsMeleeAttack)
-                return;
-
-            if (!(__instance.targetingSource is Verb verb)) 
-                return;
-
-            if (verb.HighlightFieldRadiusAroundTarget(out _) > 0.2f)
-                return;
-
-            Main.Instance.UpdateFireConeOverlay(true);
+            Main.Instance.UpdateFireConeOverlay(shouldEnableOverlay);
             }
             finally
             {

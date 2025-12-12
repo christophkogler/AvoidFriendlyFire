@@ -183,7 +183,10 @@ namespace AvoidFriendlyFire
             {
                 _fireConeOverlay = new FireConeOverlay();
             }
-            _fireConeOverlay.Update(enabled);
+
+            _fireConeOverlay.SetActive(enabled);
+            if (enabled)
+                _fireConeOverlay.Update();
             }
             finally
             {

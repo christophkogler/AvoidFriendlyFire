@@ -12,6 +12,8 @@ namespace AvoidFriendlyFire
 
         private HashSet<int> _fireCone;
 
+        private bool _isActive;
+
 
         public CellBoolDrawer Drawer
         {
@@ -38,18 +40,34 @@ namespace AvoidFriendlyFire
 
         public Color Color => Color.red;
 
-        public void Update(bool enabled)
+        public void SetActive(bool active)
         {
-            if (enabled)
-            {
-                Drawer.MarkForDraw();
-                if (ShouldUpdate())
-                {
-                    BuildFireCone();
-                    Drawer.SetDirty();
-                }
+            if (_isActive == active)
+                return;
 
+            _isActive = active;
+
+            if (!_isActive)
+            {
+                _fireCone = null;
+                _lastMouseCell = IntVec3.Invalid;
+                if (_drawerInt != null)
+                    _drawerInt.SetDirty();
             }
+        }
+
+        public void Update()
+        {
+            if (!_isActive)
+                return;
+
+            Drawer.MarkForDraw();
+            if (ShouldUpdate())
+            {
+                BuildFireCone();
+                Drawer.SetDirty();
+            }
+
             Drawer.CellBoolDrawerUpdate();
         }
 
