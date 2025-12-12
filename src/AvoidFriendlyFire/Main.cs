@@ -86,6 +86,7 @@ namespace AvoidFriendlyFire
                 "FALCFF.UseFarSideFilterDesc".Translate());
 
             listing.Label("FALCFF.MinCheckedDiskWidth".Translate() + $": {GetMinCheckedDiskWidth()}");
+            listing.GapLine();
             var sliderRect = listing.GetRect(Text.LineHeight);
             _settings.MinCheckedDiskWidth = Mathf.RoundToInt(
                 Widgets.HorizontalSlider(sliderRect, _settings.MinCheckedDiskWidth, 1, 20, false,
