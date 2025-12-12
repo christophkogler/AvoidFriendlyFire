@@ -20,25 +20,27 @@ namespace AvoidFriendlyFire
             return ComputeFireConeFromDescriptor(fireProperties, descriptor, applyFarSideFilter);
         }
 
-        private static IEnumerable<int> GetShootablePointsBetween(
-            IntVec3 origin, IntVec3 target, Map map)
+        private static void AddShootablePointsBetween(
+            IntVec3 origin,
+            IntVec3 target,
+            Map map,
+            HashSet<int> destinationCellIndices)
         {
+            var cellIndices = map.cellIndices;
+
             foreach (var point in GenSight.PointsOnLineOfSight(origin, target))
             {
                 if (!point.CanBeSeenOver(map))
-                    yield break;
+                    return;
 
-                // Nearby pawns do not receive friendly fire
                 if (IsInCloseRange(origin, point))
-                {
                     continue;
-                }
 
-                yield return map.cellIndices.CellToIndex(point.x, point.z);
+                destinationCellIndices.Add(cellIndices.CellToIndex(point.x, point.z));
             }
 
             if (!IsAdjacent(origin, target))
-                yield return map.cellIndices.CellToIndex(target.x, target.z);
+                destinationCellIndices.Add(cellIndices.CellToIndex(target.x, target.z));
         }
 
         private static bool IsInCloseRange(IntVec3 origin, IntVec3 point)
@@ -75,7 +77,7 @@ namespace AvoidFriendlyFire
             bool applyFarSideFilter)
         {
             var result = new HashSet<int>();
-            var map = Find.CurrentMap;
+            var map = fireProperties.CasterMap;
 
             // Vector from target to origin for far-side checks
             IntVec3 centerToOrigin = fireProperties.Origin - fireProperties.Target;
@@ -93,7 +95,7 @@ namespace AvoidFriendlyFire
                         continue; // Skip near-side samples
                 }
 
-                result.UnionWith(GetShootablePointsBetween(fireProperties.Origin, splashTarget, map));
+                AddShootablePointsBetween(fireProperties.Origin, splashTarget, map, result);
             }
 
             return result;
