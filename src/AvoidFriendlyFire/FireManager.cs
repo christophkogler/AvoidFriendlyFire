@@ -35,13 +35,14 @@ namespace AvoidFriendlyFire
 
             EnsurePerTickCacheFresh();
 
+            var casterMap = fireProperties.CasterMap;
+
             var perTickSafetyKey = CreatePerTickSafetyKey(fireProperties);
             if (_perTickSafeShotCache.TryGetValue(perTickSafetyKey, out var cachedResult))
             {
                 if (!cachedResult.IsSafe)
                 {
-                    var map = fireProperties.CasterMap;
-                    var pawns = map.mapPawns?.AllPawnsSpawned;
+                    var pawns = casterMap.mapPawns?.AllPawnsSpawned;
                     if (pawns != null && cachedResult.BlockerPawnThingId != 0)
                     {
                         for (int i = 0; i < pawns.Count; i++)
@@ -81,15 +82,14 @@ namespace AvoidFriendlyFire
                 return true;
             }
 
-            var map = fireProperties.CasterMap;
-            var allPawnsSpawned = map.mapPawns?.AllPawnsSpawned;
+            var allPawnsSpawned = casterMap.mapPawns?.AllPawnsSpawned;
             if (allPawnsSpawned == null || allPawnsSpawned.Count == 0)
             {
                 _perTickSafeShotCache[perTickSafetyKey] = PerTickSafetyResult.Safe();
                 return true;
             }
 
-            var cellIndices = map.cellIndices;
+            var cellIndices = casterMap.cellIndices;
             var originCell = fireProperties.Origin;
             var targetCell = fireProperties.Target;
             var shooterPawn = fireProperties.Caster;
