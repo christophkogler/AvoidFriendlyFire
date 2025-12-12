@@ -1,13 +1,13 @@
 # AvoidFriendlyFire
 
-A RimWorld mod to drastically reduce accidental friendly fire, by preventing pawns from firing if they might hit friendlies.
+ A RimWorld mod to drastically reduce accidental friendly fire, by preventing pawns from firing if they might hit friendlies.
 
 ## Features
 
 - When a pawn is selected, you are able to visualize their accuracy / miss radius.
 - Pawns will not shoot while friendly pawns are within their miss radius.
 - Highlight which pawns are obstructing shots, and which are being obstructed.
-- Supports RimWorld v1.6; depends on Harmony and HugsLib.
+- Supports RimWorld v1.6; depends on Harmony.
 
 ## Installation
 
@@ -29,7 +29,7 @@ A RimWorld mod to drastically reduce accidental friendly fire, by preventing paw
 
 - Visual Studio 2022  
 - .NET Framework (as required by RimWorld)  
-- NuGet for package dependencies (RimWorld references, Harmony, HugsLib)
+- NuGet for package dependencies (RimWorld references, Harmony)
 
 ### Steps
 

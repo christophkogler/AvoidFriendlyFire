@@ -1,190 +1,194 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using HarmonyLib;
-using HugsLib.Settings;
-using HugsLib.Utils;
+using UnityEngine;
 using Verse;
 
 namespace AvoidFriendlyFire
 {
-    public class Main : HugsLib.ModBase
+    public class AvoidFriendlyFireSettings : ModSettings
     {
-        public override string ModIdentifier => "AvoidFriendlyFire";
+        public bool ModEnabled = true;
+        public bool ShowOverlay = true;
+        public bool ProtectPets = true;
+        public bool ProtectColonyAnimals;
+        public bool IgnoreShieldedPawns = true;
+        public bool EnableWhenUndrafted;
+        public bool EnableAccurateMissRadius = true;
+        public bool UseFarSideFilter;
+        public int MinCheckedDiskWidth = 2;
 
+        public override void ExposeData()
+        {
+            base.ExposeData();
+            Scribe_Values.Look(ref ModEnabled, "enabled", true);
+            Scribe_Values.Look(ref ShowOverlay, "showOverlay", true);
+            Scribe_Values.Look(ref ProtectPets, "protectPets", true);
+            Scribe_Values.Look(ref ProtectColonyAnimals, "protectColonyAnimals");
+            Scribe_Values.Look(ref IgnoreShieldedPawns, "ignoreShieldedPawns", true);
+            Scribe_Values.Look(ref EnableWhenUndrafted, "enableWhenUndrafted");
+            Scribe_Values.Look(ref EnableAccurateMissRadius, "enableAccurateMissRadius", true);
+            Scribe_Values.Look(ref UseFarSideFilter, "useFarSideFilter");
+            Scribe_Values.Look(ref MinCheckedDiskWidth, "minCheckedDiskWidth", 2);
+        }
+    }
+
+    public class Main : Mod
+    {
         internal static Main Instance { get; private set; }
-
-        internal new ModLogger Logger => base.Logger;
-
-        private FireConeOverlay _fireConeOverlay;
-
-        private ExtendedDataStorage _extendedDataStorage;
 
         public PawnStatusTracker PawnStatusTracker { get; } = new PawnStatusTracker();
 
+        private readonly Harmony _harmony;
+        private readonly AvoidFriendlyFireSettings _settings;
+
+        private ExtendedDataStorage _extendedDataStorage;
         private FireManager _fireManager;
+        private FireConeOverlay _fireConeOverlay;
+        private Map _lastSeenMap;
 
-        private SettingHandle<bool> _showOverlay;
-
-        private SettingHandle<bool> _protectPets;
-
-        private SettingHandle<bool> _protectColonyAnimals;
-
-        private SettingHandle<bool> _ignoreShieldedPawns;
-
-        private SettingHandle<bool> _modEnabled;
-
-        private SettingHandle<bool> _enableWhenUndrafted;
-
-        private SettingHandle<bool> _enableAccurateMissRadius;
-
-        private SettingHandle<bool> _useFarSideFilter;
-
-        private SettingHandle<int> _minCheckedDiskWidth;
-
-        public Main()
+        public Main(ModContentPack content) : base(content)
         {
             Instance = this;
+            _settings = GetSettings<AvoidFriendlyFireSettings>();
+            _fireManager = new FireManager();
+
+            _harmony = new Harmony("falconne.AvoidFriendlyFire");
+            _harmony.PatchAll();
+            TryPatchCombatExtended();
         }
 
-        public override void Tick(int currentTick)
+        public override string SettingsCategory()
         {
-            base.Tick(currentTick);
+            return "Avoid Friendly Fire";
+        }
+
+        public override void DoSettingsWindowContents(Rect inRect)
+        {
+            var listing = new Listing_Standard();
+            listing.Begin(inRect);
+
+            listing.CheckboxLabeled("FALCFF.EnableMod".Translate(), ref _settings.ModEnabled,
+                "FALCFF.EnableModDesc".Translate());
+            listing.CheckboxLabeled("FALCFF.ShowTargetingOverlay".Translate(), ref _settings.ShowOverlay,
+                "FALCFF.ShowTargetingOverlayDesc".Translate());
+            listing.CheckboxLabeled("FALCFF.ProtectPets".Translate(), ref _settings.ProtectPets,
+                "FALCFF.ProtectPetsDesc".Translate());
+            listing.CheckboxLabeled("FALCFF.ProtectColonyAnimals".Translate(), ref _settings.ProtectColonyAnimals,
+                "FALCFF.ProtectColonyAnimalsDesc".Translate());
+            listing.CheckboxLabeled("FALCFF.IgnoreShieldedPawns".Translate(), ref _settings.IgnoreShieldedPawns,
+                "FALCFF.IgnoreShieldedPawnsDesc".Translate());
+            listing.CheckboxLabeled("FALCFF.EnableWhenUndrafted".Translate(), ref _settings.EnableWhenUndrafted,
+                "FALCFF.EnableWhenUndraftedDesc".Translate());
+            listing.CheckboxLabeled("FALCFF.EnableAccurateMissRadius".Translate(),
+                ref _settings.EnableAccurateMissRadius, "FALCFF.EnableAccurateMissRadiusDesc".Translate());
+            listing.CheckboxLabeled("FALCFF.UseFarSideFilter".Translate(), ref _settings.UseFarSideFilter,
+                "FALCFF.UseFarSideFilterDesc".Translate());
+
+            listing.Label("FALCFF.MinCheckedDiskWidth".Translate() + $": {GetMinCheckedDiskWidth()}");
+            var sliderRect = listing.GetRect(Text.LineHeight);
+            _settings.MinCheckedDiskWidth = Mathf.RoundToInt(
+                Widgets.HorizontalSlider(sliderRect, _settings.MinCheckedDiskWidth, 1, 20, false,
+                    "FALCFF.MinCheckedDiskWidthDesc".Translate(), "1", "20"));
+
+            listing.End();
+        }
+
+        public void OnWorldTick(int currentTick)
+        {
             if (!IsModEnabled())
                 return;
-            _fireManager?.RemoveExpiredCones(currentTick);
+
+            GetFireManager().RemoveExpiredCones(currentTick);
             PawnStatusTracker.RemoveExpired();
+            TrackMapChange();
         }
 
-        public override void WorldLoaded()
+        private void TrackMapChange()
         {
-            base.WorldLoaded();
-            _extendedDataStorage =
-                Find.World.GetComponent<ExtendedDataStorage>();
+            var map = Find.CurrentMap;
+            if (map == _lastSeenMap)
+                return;
 
-            // Ticks appear to be run before MapLoaded, so we need a FireManager available
-            _fireManager = new FireManager();
+            _lastSeenMap = map;
+            if (map != null)
+            {
+                _fireManager = new FireManager();
+                _fireConeOverlay = new FireConeOverlay();
+                PawnStatusTracker.Reset();
+            }
         }
 
-        public override void MapLoaded(Map map)
+        private void TryPatchCombatExtended()
         {
-            base.MapLoaded(map);
-            _fireManager = new FireManager();
-            _fireConeOverlay = new FireConeOverlay();
-            PawnStatusTracker.Reset();
-        }
-
-        public override void DefsLoaded()
-        {
-            base.DefsLoaded();
-
-            _modEnabled = Settings.GetHandle(
-                "enabled", "FALCFF.EnableMod".Translate(), "FALCFF.EnableModDesc".Translate(), true);
-
-            _showOverlay = Settings.GetHandle(
-                "showOverlay", "FALCFF.ShowTargetingOverlay".Translate(),
-                "FALCFF.ShowTargetingOverlayDesc".Translate(), true);
-
-            _protectPets = Settings.GetHandle(
-                "protectPets", "FALCFF.ProtectPets".Translate(),
-                "FALCFF.ProtectPetsDesc".Translate(),
-                true);
-
-            _protectColonyAnimals = Settings.GetHandle(
-                "protectColonyAnimals", "FALCFF.ProtectColonyAnimals".Translate(),
-                "FALCFF.ProtectColonyAnimalsDesc".Translate(),
-                false);
-
-            _ignoreShieldedPawns = Settings.GetHandle(
-                "ignoreShieldedPawns", "FALCFF.IgnoreShieldedPawns".Translate(),
-                "FALCFF.IgnoreShieldedPawnsDesc".Translate(),
-                true);
-
-            _enableWhenUndrafted = Settings.GetHandle(
-                "enableWhenUndrafted", "FALCFF.EnableWhenUndrafted".Translate(),
-                "FALCFF.EnableWhenUndraftedDesc".Translate(),
-                false);
-
-            _enableAccurateMissRadius = Settings.GetHandle(
-                "enableAccurateMissRadius", "FALCFF.EnableAccurateMissRadius".Translate(),
-                "FALCFF.EnableAccurateMissRadiusDesc".Translate(),
-                true);
-
-            _useFarSideFilter = Settings.GetHandle(
-                "useFarSideFilter", "FALCFF.UseFarSideFilter".Translate(),
-                "FALCFF.UseFarSideFilterDesc".Translate(),
-                false);
-
-            _minCheckedDiskWidth = Settings.GetHandle(
-                "minCheckedDiskWidth", "FALCFF.MinCheckedDiskWidth".Translate(),
-                "FALCFF.MinCheckedDiskWidthDesc".Translate(),
-                2);
-            _minCheckedDiskWidth.CustomDrawer = null; // use default numeric drawer
-
             try
             {
                 var ceVerb = GenTypes.GetTypeInAnyAssembly("CombatExtended.Verb_LaunchProjectileCE");
                 if (ceVerb == null)
                     return;
 
-                Logger.Message("Patching CombatExtended methods");
+                Log.Message("[AvoidFriendlyFire] Patching CombatExtended methods");
                 var vecType = GenTypes.GetTypeInAnyAssembly("Verse.IntVec3");
                 var ltiType = GenTypes.GetTypeInAnyAssembly("Verse.LocalTargetInfo");
 
-                var original = ceVerb.GetMethod("CanHitTargetFrom",
-                    new [] {vecType, ltiType });
-
+                var original = ceVerb.GetMethod("CanHitTargetFrom", new[] { vecType, ltiType });
                 var postfix = typeof(Verb_CanHitTargetFrom_Patch).GetMethod("Postfix");
-                HarmonyInst.Patch(original, null, new HarmonyMethod(postfix));
-
+                _harmony.Patch(original, null, new HarmonyMethod(postfix));
             }
             catch (Exception e)
             {
-                Logger.Error("Exception while trying to detect CombatExtended:");
-                Logger.Error(e.Message);
-                Logger.Error(e.StackTrace);
+                Log.Error($"[AvoidFriendlyFire] Exception while trying to detect CombatExtended: {e}");
             }
         }
 
         public void UpdateFireConeOverlay(bool enabled)
         {
-            _fireConeOverlay?.Update(_showOverlay && enabled);
+            if (!IsModEnabled() || !_settings.ShowOverlay)
+                return;
+
+            if (Find.CurrentMap == null)
+                return;
+
+            if (_fireConeOverlay == null)
+            {
+                _fireConeOverlay = new FireConeOverlay();
+            }
+            _fireConeOverlay.Update(enabled);
         }
 
         public bool ShouldProtectPets()
         {
-            return _protectPets;
+            return _settings.ProtectPets;
         }
 
         public bool ShouldProtectAllColonyAnimals()
         {
-            return _protectColonyAnimals;
+            return _settings.ProtectColonyAnimals;
         }
 
         public bool ShouldIgnoreShieldedPawns()
         {
-            return _ignoreShieldedPawns;
+            return _settings.IgnoreShieldedPawns;
         }
 
         public bool ShouldEnableWhenUndrafted()
         {
-            return _enableWhenUndrafted;
+            return _settings.EnableWhenUndrafted;
         }
 
         public bool ShouldEnableAccurateMissRadius()
         {
-            return _enableAccurateMissRadius;
+            return _settings.EnableAccurateMissRadius;
         }
 
         public bool ShouldUseFarSideFilter()
         {
-            return _useFarSideFilter;
+            return _settings.UseFarSideFilter;
         }
 
         public int GetMinCheckedDiskWidth()
         {
-            // Clamp to sane range [1..20] to avoid degenerate rings
-            int width = _minCheckedDiskWidth;
+            int width = _settings.MinCheckedDiskWidth;
             if (width < 1) width = 1;
             if (width > 20) width = 20;
             return width;
@@ -192,7 +196,7 @@ namespace AvoidFriendlyFire
 
         public static Pawn GetSelectedPawn()
         {
-            List<object> selectedObjects = Find.Selector.SelectedObjects;
+            var selectedObjects = Find.Selector.SelectedObjects;
             if (selectedObjects == null || selectedObjects.Count != 1)
                 return null;
 
@@ -201,17 +205,28 @@ namespace AvoidFriendlyFire
 
         public ExtendedDataStorage GetExtendedDataStorage()
         {
+            if (_extendedDataStorage != null)
+                return _extendedDataStorage;
+
+            if (Find.World == null)
+                return null;
+
+            _extendedDataStorage = Find.World.GetComponent<ExtendedDataStorage>();
             return _extendedDataStorage;
         }
 
         public FireManager GetFireManager()
         {
+            if (_fireManager == null)
+            {
+                _fireManager = new FireManager();
+            }
             return _fireManager;
         }
 
         public bool IsModEnabled()
         {
-            return _modEnabled;
+            return _settings.ModEnabled;
         }
     }
 }
