@@ -153,7 +153,6 @@ namespace AvoidFriendlyFire
             var targetCell = fireProperties.Target;
 
             var radiusAtTarget = missRadiusCells + 1.5f;
-            var radiusAtTargetSquared = radiusAtTarget * radiusAtTarget;
 
             for (int pawnIndex = 0; pawnIndex < allPawnsSpawned.Count; pawnIndex++)
             {
@@ -167,7 +166,7 @@ namespace AvoidFriendlyFire
                 if (candidatePawn.Position == originCell || candidatePawn.Position == targetCell)
                     continue;
 
-                if (!IsCellWithinApproximateTaperedCapsule(originCell, targetCell, candidatePawn.Position, radiusAtTarget, radiusAtTargetSquared))
+                if (!IsCellWithinApproximateTaperedCapsule(originCell, targetCell, candidatePawn.Position, radiusAtTarget))
                     continue;
 
                 var candidateFaction = candidatePawn.Faction;
@@ -207,8 +206,7 @@ namespace AvoidFriendlyFire
             IntVec3 originCell,
             IntVec3 targetCell,
             IntVec3 candidateCell,
-            float radiusAtTarget,
-            float radiusAtTargetSquared)
+            float radiusAtTarget)
         {
             // Radius is intentionally small near the shooter because friendly fire close to the shooter
             // is already unlikely and the precise cone will exclude close-range pawns anyway.
@@ -240,7 +238,7 @@ namespace AvoidFriendlyFire
                 return (dx * dx + dz * dz) <= (radiusAtOrigin * radiusAtOrigin);
             }
 
-            // projection = dot(w, v) gives how far along the segment the point projects (in |v| units).
+            // projection = dot(w, v) gives how far along the segment the point projects (in |v|^2 units).
             float projection = originToPointX * segmentVectorX + originToPointZ * segmentVectorZ;
 
             // Clamp projection to the segment and compute t in [0, 1].
@@ -277,10 +275,6 @@ namespace AvoidFriendlyFire
             // Using squared comparisons avoids an expensive sqrt on the distance.
             float localRadius = radiusAtOrigin + ((radiusAtTarget - radiusAtOrigin) * t);
             float localRadiusSquared = localRadius * localRadius;
-
-            // Note: radiusAtTargetSquared isn't strictly needed with the tapered formula, but it’s kept
-            // as a call-site precomputed value if we ever want a faster non-tapered path.
-            _ = radiusAtTargetSquared;
 
             return distanceSquaredToSegment <= localRadiusSquared;
         }
