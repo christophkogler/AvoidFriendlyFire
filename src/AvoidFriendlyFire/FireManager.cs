@@ -152,8 +152,8 @@ namespace AvoidFriendlyFire
             var originCell = fireProperties.Origin;
             var targetCell = fireProperties.Target;
 
-            var radiusToUse = missRadiusCells + 1.5f;
-            var radiusSquared = radiusToUse * radiusToUse;
+            var radiusAtTarget = missRadiusCells + 1.5f;
+            var radiusAtTargetSquared = radiusAtTarget * radiusAtTarget;
 
             for (int pawnIndex = 0; pawnIndex < allPawnsSpawned.Count; pawnIndex++)
             {
@@ -167,7 +167,7 @@ namespace AvoidFriendlyFire
                 if (candidatePawn.Position == originCell || candidatePawn.Position == targetCell)
                     continue;
 
-                if (!IsCellWithinApproximateCapsule(originCell, targetCell, candidatePawn.Position, radiusSquared))
+                if (!IsCellWithinApproximateTaperedCapsule(originCell, targetCell, candidatePawn.Position, radiusAtTarget, radiusAtTargetSquared))
                     continue;
 
                 var candidateFaction = candidatePawn.Faction;
@@ -193,45 +193,96 @@ namespace AvoidFriendlyFire
             return false;
         }
 
-        private static bool IsCellWithinApproximateCapsule(IntVec3 originCell, IntVec3 targetCell, IntVec3 candidateCell, float radiusSquared)
+        // Fast approximation: treat the shot path as a 2D segment (x/z) and the "danger zone" as a
+        // tapered capsule around it. The capsule radius starts small near the shooter and increases
+        // linearly toward the target:
+        //
+        //   radius(t) = radiusAtOrigin + (radiusAtTarget - radiusAtOrigin) * t
+        //
+        // where t is the normalized position of the closest point on the segment to the candidate cell.
+        //
+        // This is deliberately conservative/cheap: it only decides whether we should run the more
+        // expensive LoS-based cone check, not whether the shot is safe.
+        private static bool IsCellWithinApproximateTaperedCapsule(
+            IntVec3 originCell,
+            IntVec3 targetCell,
+            IntVec3 candidateCell,
+            float radiusAtTarget,
+            float radiusAtTargetSquared)
         {
-            float ox = originCell.x;
-            float oz = originCell.z;
-            float tx = targetCell.x;
-            float tz = targetCell.z;
-            float px = candidateCell.x;
-            float pz = candidateCell.z;
+            // Radius is intentionally small near the shooter because friendly fire close to the shooter
+            // is already unlikely and the precise cone will exclude close-range pawns anyway.
+            const float radiusAtOrigin = 1f;
 
-            float vx = tx - ox;
-            float vz = tz - oz;
-            float wx = px - ox;
-            float wz = pz - oz;
+            // Convert IntVec3s to 2D points on the map plane.
+            float originX = originCell.x;
+            float originZ = originCell.z;
+            float targetX = targetCell.x;
+            float targetZ = targetCell.z;
+            float pointX = candidateCell.x;
+            float pointZ = candidateCell.z;
 
-            float segmentLengthSquared = vx * vx + vz * vz;
+            // v = segment direction from origin to target
+            float segmentVectorX = targetX - originX;
+            float segmentVectorZ = targetZ - originZ;
+
+            // w = vector from origin to candidate point
+            float originToPointX = pointX - originX;
+            float originToPointZ = pointZ - originZ;
+
+            // Compute squared segment length: |v|^2
+            float segmentLengthSquared = segmentVectorX * segmentVectorX + segmentVectorZ * segmentVectorZ;
             if (segmentLengthSquared <= 0.0001f)
             {
-                float dx = px - ox;
-                float dz = pz - oz;
-                return (dx * dx + dz * dz) <= radiusSquared;
+                // Degenerate segment (origin ~= target): use the smaller radius at origin.
+                float dx = originToPointX;
+                float dz = originToPointZ;
+                return (dx * dx + dz * dz) <= (radiusAtOrigin * radiusAtOrigin);
             }
 
-            float projection = wx * vx + wz * vz;
+            // projection = dot(w, v) gives how far along the segment the point projects (in |v| units).
+            float projection = originToPointX * segmentVectorX + originToPointZ * segmentVectorZ;
+
+            // Clamp projection to the segment and compute t in [0, 1].
+            // t represents where the closest point lies: 0 at origin, 1 at target.
+            float t;
+            float closestX;
+            float closestZ;
+
             if (projection <= 0f)
-                return (wx * wx + wz * wz) <= radiusSquared;
-
-            if (projection >= segmentLengthSquared)
             {
-                float dx = px - tx;
-                float dz = pz - tz;
-                return (dx * dx + dz * dz) <= radiusSquared;
+                t = 0f;
+                closestX = originX;
+                closestZ = originZ;
+            }
+            else if (projection >= segmentLengthSquared)
+            {
+                t = 1f;
+                closestX = targetX;
+                closestZ = targetZ;
+            }
+            else
+            {
+                t = projection / segmentLengthSquared;
+                closestX = originX + (t * segmentVectorX);
+                closestZ = originZ + (t * segmentVectorZ);
             }
 
-            float t = projection / segmentLengthSquared;
-            float closestX = ox + (t * vx);
-            float closestZ = oz + (t * vz);
-            float cx = px - closestX;
-            float cz = pz - closestZ;
-            return (cx * cx + cz * cz) <= radiusSquared;
+            // Compute squared distance from candidate point to the closest point on the segment.
+            float deltaX = pointX - closestX;
+            float deltaZ = pointZ - closestZ;
+            float distanceSquaredToSegment = (deltaX * deltaX) + (deltaZ * deltaZ);
+
+            // Tapered radius at that position t. This produces a "cone-like" widening around the segment.
+            // Using squared comparisons avoids an expensive sqrt on the distance.
+            float localRadius = radiusAtOrigin + ((radiusAtTarget - radiusAtOrigin) * t);
+            float localRadiusSquared = localRadius * localRadius;
+
+            // Note: radiusAtTargetSquared isn't strictly needed with the tapered formula, but it’s kept
+            // as a call-site precomputed value if we ever want a faster non-tapered path.
+            _ = radiusAtTargetSquared;
+
+            return distanceSquaredToSegment <= localRadiusSquared;
         }
 
         private bool TryGetCachedFireConeFor(FireProperties fireProperties, out HashSet<int> fireCone)
