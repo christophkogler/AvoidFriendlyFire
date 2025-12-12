@@ -192,10 +192,10 @@ namespace AvoidFriendlyFire
 
             public override bool Equals(object obj)
             {
-                if (obj is not PerTickSafetyKey otherKey)
+                if (!(obj is PerTickSafetyKey))
                     return false;
 
-                return Equals(otherKey);
+                return Equals((PerTickSafetyKey)obj);
             }
 
             public bool Equals(PerTickSafetyKey otherKey)
