@@ -98,13 +98,13 @@ namespace AvoidFriendlyFire
                 var result = new HashSet<int>();
                 var map = fireProperties.CasterMap;
 
-                // Vector from target to origin for far-side checks
-                IntVec3 centerToOrigin = fireProperties.Origin - fireProperties.Target;
+            // Vector from target to origin for far-side checks
+            IntVec3 centerToOrigin = fireProperties.Origin - fireProperties.Target;
 
-                for (var i = 0; i < missAreaDescriptor.AdjustmentCount; i++)
-                {
-                    var offset = missAreaDescriptor.AdjustmentVector[i];
-                    var splashTarget = fireProperties.Target + offset;
+            for (var i = 0; i < missAreaDescriptor.AdjustmentCount; i++)
+            {
+                var offset = missAreaDescriptor.AdjustmentVector[missAreaDescriptor.AdjustmentStartIndex + i];
+                var splashTarget = fireProperties.Target + offset;
 
                     if (applyFarSideFilter)
                     {

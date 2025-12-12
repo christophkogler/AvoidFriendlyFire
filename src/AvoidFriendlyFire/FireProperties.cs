@@ -7,11 +7,20 @@ namespace AvoidFriendlyFire
     public struct MissAreaDescriptor
     {
         public IntVec3[] AdjustmentVector;
+        public int AdjustmentStartIndex;
         public int AdjustmentCount;
 
         public MissAreaDescriptor(IntVec3[] adjustmentVector, int adjustmentCount)
         {
             AdjustmentVector = adjustmentVector;
+            AdjustmentStartIndex = 0;
+            AdjustmentCount = adjustmentCount;
+        }
+
+        public MissAreaDescriptor(IntVec3[] adjustmentVector, int adjustmentStartIndex, int adjustmentCount)
+        {
+            AdjustmentVector = adjustmentVector;
+            AdjustmentStartIndex = adjustmentStartIndex;
             AdjustmentCount = adjustmentCount;
         }
     }
@@ -137,9 +146,7 @@ namespace AvoidFriendlyFire
                 // If inner radius collapses to 0 or less, include center by starting from index 0
                 int forcedMissInnerCount = innerRadius <= 0f ? 0 : GenRadial.NumCellsInRadius(innerRadius);
                 int forcedMissRingCount = forcedMissOuterCount - forcedMissInnerCount;
-                var forcedMissRingOffsets = new IntVec3[forcedMissRingCount];
-                Array.Copy(GenRadial.RadialPattern, forcedMissInnerCount, forcedMissRingOffsets, 0, forcedMissRingCount);
-                return new MissAreaDescriptor(forcedMissRingOffsets, forcedMissRingCount);
+                return new MissAreaDescriptor(GenRadial.RadialPattern, forcedMissInnerCount, forcedMissRingCount);
             }
 
             if (!Main.Instance.ShouldEnableAccurateMissRadius())
@@ -163,9 +170,7 @@ namespace AvoidFriendlyFire
             // If inner radius collapses to 0 or less, include center by starting from index 0
             int innerCount = innerMissRadius <= 0f ? 0 : GenRadial.NumCellsInRadius(innerMissRadius);
             int ringCount = outerCount - innerCount;
-            var ringOffsets = new IntVec3[ringCount];
-            Array.Copy(GenRadial.RadialPattern, innerCount, ringOffsets, 0, ringCount);
-            return new MissAreaDescriptor(ringOffsets, ringCount);
+            return new MissAreaDescriptor(GenRadial.RadialPattern, innerCount, ringCount);
         }
 
         

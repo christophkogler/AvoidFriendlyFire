@@ -10,6 +10,11 @@ namespace AvoidFriendlyFire
     {
         public bool SkipNextCheck;
 
+        private readonly Dictionary<PerTickSafetyKey, bool> _perTickSafeShotCache =
+            new Dictionary<PerTickSafetyKey, bool>();
+
+        private int _perTickCacheTick = -1;
+
         private readonly Dictionary<int, Dictionary<int, CachedFireCone>> _cachedFireCones
             = new Dictionary<int, Dictionary<int, CachedFireCone>>();
 
@@ -28,14 +33,26 @@ namespace AvoidFriendlyFire
 
             Main.Instance.PawnStatusTracker.Remove(fireProperties.Caster);
 
+            EnsurePerTickCacheFresh();
+
+            var perTickSafetyKey = CreatePerTickSafetyKey(fireProperties);
+            if (_perTickSafeShotCache.ContainsKey(perTickSafetyKey))
+                return true;
+
             HashSet<int> fireCone = GetOrCreatedCachedFireConeFor(fireProperties);
             if (fireCone == null)
+            {
+                _perTickSafeShotCache[perTickSafetyKey] = true;
                 return true;
+            }
 
             var map = fireProperties.CasterMap;
             var allPawnsSpawned = map.mapPawns?.AllPawnsSpawned;
             if (allPawnsSpawned == null || allPawnsSpawned.Count == 0)
+            {
+                _perTickSafeShotCache[perTickSafetyKey] = true;
                 return true;
+            }
 
             var cellIndices = map.cellIndices;
             var originCell = fireProperties.Origin;
@@ -51,11 +68,15 @@ namespace AvoidFriendlyFire
                 if (candidatePawn == shooterPawn)
                     continue;
 
-                var candidateFaction = candidatePawn.Faction;
-                if (candidateFaction == null)
+                if (candidatePawn.Position == originCell || candidatePawn.Position == targetCell)
                     continue;
 
-                if (candidatePawn.Position == originCell || candidatePawn.Position == targetCell)
+                var candidateCellIndex = cellIndices.CellToIndex(candidatePawn.Position);
+                if (!fireCone.Contains(candidateCellIndex))
+                    continue;
+
+                var candidateFaction = candidatePawn.Faction;
+                if (candidateFaction == null)
                     continue;
 
                 if (candidatePawn.RaceProps.Humanlike)
@@ -71,20 +92,42 @@ namespace AvoidFriendlyFire
                 if (IsPawnWearingUsefulShield(candidatePawn))
                     continue;
 
-                var candidateCellIndex = cellIndices.CellToIndex(candidatePawn.Position);
-                if (!fireCone.Contains(candidateCellIndex))
-                    continue;
-
                 Main.Instance.PawnStatusTracker.AddBlockedShooter(shooterPawn, candidatePawn);
                 return false;
             }
 
+            _perTickSafeShotCache[perTickSafetyKey] = true;
             return true;
             }
             finally
             {
                 canHitTargetSafelyScope.Dispose();
             }
+        }
+
+        private void EnsurePerTickCacheFresh()
+        {
+            var currentTick = Find.TickManager?.TicksGame ?? -1;
+            if (currentTick == _perTickCacheTick)
+                return;
+
+            _perTickCacheTick = currentTick;
+            _perTickSafeShotCache.Clear();
+        }
+
+        private static PerTickSafetyKey CreatePerTickSafetyKey(FireProperties fireProperties)
+        {
+            var pawn = fireProperties.Caster;
+            var map = fireProperties.CasterMap;
+            var shooterPositionIndex = map.cellIndices.CellToIndex(pawn.Position);
+            var primaryWeaponId = pawn.equipment?.Primary?.thingIDNumber ?? 0;
+
+            return new PerTickSafetyKey(
+                map.uniqueID,
+                pawn.thingIDNumber,
+                shooterPositionIndex,
+                fireProperties.TargetIndex,
+                primaryWeaponId);
         }
 
         private bool IsPawnWearingUsefulShield(Pawn pawn)
@@ -109,6 +152,60 @@ namespace AvoidFriendlyFire
             }
 
             return false;
+        }
+
+        private readonly struct PerTickSafetyKey : System.IEquatable<PerTickSafetyKey>
+        {
+            private readonly int _mapId;
+            private readonly int _shooterId;
+            private readonly int _shooterPositionIndex;
+            private readonly int _targetIndex;
+            private readonly int _primaryWeaponId;
+
+            public PerTickSafetyKey(
+                int mapId,
+                int shooterId,
+                int shooterPositionIndex,
+                int targetIndex,
+                int primaryWeaponId)
+            {
+                _mapId = mapId;
+                _shooterId = shooterId;
+                _shooterPositionIndex = shooterPositionIndex;
+                _targetIndex = targetIndex;
+                _primaryWeaponId = primaryWeaponId;
+            }
+
+            public override int GetHashCode()
+            {
+                unchecked
+                {
+                    int hash = 17;
+                    hash = (hash * 31) + _mapId;
+                    hash = (hash * 31) + _shooterId;
+                    hash = (hash * 31) + _shooterPositionIndex;
+                    hash = (hash * 31) + _targetIndex;
+                    hash = (hash * 31) + _primaryWeaponId;
+                    return hash;
+                }
+            }
+
+            public override bool Equals(object obj)
+            {
+                if (obj is not PerTickSafetyKey otherKey)
+                    return false;
+
+                return Equals(otherKey);
+            }
+
+            public bool Equals(PerTickSafetyKey otherKey)
+            {
+                return _mapId == otherKey._mapId &&
+                       _shooterId == otherKey._shooterId &&
+                       _shooterPositionIndex == otherKey._shooterPositionIndex &&
+                       _targetIndex == otherKey._targetIndex &&
+                       _primaryWeaponId == otherKey._primaryWeaponId;
+            }
         }
 
         private static bool ShouldProtectAnimal(Pawn animal)
