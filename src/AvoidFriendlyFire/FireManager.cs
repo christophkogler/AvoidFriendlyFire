@@ -33,39 +33,50 @@ namespace AvoidFriendlyFire
                 return true;
 
             var map = fireProperties.CasterMap;
-            foreach (int cellIndex in fireCone)
+            var allPawnsSpawned = map.mapPawns?.AllPawnsSpawned;
+            if (allPawnsSpawned == null || allPawnsSpawned.Count == 0)
+                return true;
+
+            var cellIndices = map.cellIndices;
+            var originCell = fireProperties.Origin;
+            var targetCell = fireProperties.Target;
+            var shooterPawn = fireProperties.Caster;
+
+            for (int pawnIndex = 0; pawnIndex < allPawnsSpawned.Count; pawnIndex++)
             {
-                var cell = map.cellIndices.IndexToCell(cellIndex);
-                if (cell == fireProperties.Origin || cell == fireProperties.Target)
+                Pawn candidatePawn = allPawnsSpawned[pawnIndex];
+                if (candidatePawn == null || candidatePawn.RaceProps == null || candidatePawn.Dead)
                     continue;
 
-                var thingsInCell = map.thingGrid.ThingsListAt(cell);
-                for (int i = 0; i < thingsInCell.Count; i++)
+                if (candidatePawn == shooterPawn)
+                    continue;
+
+                var candidateFaction = candidatePawn.Faction;
+                if (candidateFaction == null)
+                    continue;
+
+                if (candidatePawn.Position == originCell || candidatePawn.Position == targetCell)
+                    continue;
+
+                if (candidatePawn.RaceProps.Humanlike)
                 {
-                    Pawn pawn = thingsInCell[i] as Pawn;
-                    if (pawn == null || pawn.RaceProps == null || pawn.Dead)
+                    if (candidatePawn.IsPrisoner || candidatePawn.HostileTo(Faction.OfPlayer))
                         continue;
-
-                    if (pawn.Faction == null)
-                        continue;
-
-                    if (pawn.RaceProps.Humanlike)
-                    {
-                        if (pawn.IsPrisoner || pawn.HostileTo(Faction.OfPlayer))
-                            continue;
-                    }
-                    else if (!ShouldProtectAnimal(pawn))
-                    {
-                        continue;
-                    }
-
-                    if (IsPawnWearingUsefulShield(pawn))
-                        continue;
-
-                    Main.Instance.PawnStatusTracker.AddBlockedShooter(fireProperties.Caster, pawn);
-
-                    return false;
                 }
+                else if (!ShouldProtectAnimal(candidatePawn))
+                {
+                    continue;
+                }
+
+                if (IsPawnWearingUsefulShield(candidatePawn))
+                    continue;
+
+                var candidateCellIndex = cellIndices.CellToIndex(candidatePawn.Position);
+                if (!fireCone.Contains(candidateCellIndex))
+                    continue;
+
+                Main.Instance.PawnStatusTracker.AddBlockedShooter(shooterPawn, candidatePawn);
+                return false;
             }
 
             return true;
