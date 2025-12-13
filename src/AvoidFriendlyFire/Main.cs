@@ -25,8 +25,8 @@ namespace AvoidFriendlyFire
             base.ExposeData();
             Scribe_Values.Look(ref ModEnabled, "enabled", true);
             Scribe_Values.Look(ref ShowOverlay, "showOverlay", true);
-            Scribe_Values.Look(ref PerfLoggingEnabled, "perfLoggingEnabled");
-            Scribe_Values.Look(ref OverlayShowCapsule, "overlayShowCapsule");
+            Scribe_Values.Look(ref PerfLoggingEnabled, "perfLoggingEnabled", false);
+            Scribe_Values.Look(ref OverlayShowCapsule, "overlayShowCapsule", false);
             Scribe_Values.Look(ref ProtectPets, "protectPets", true);
             Scribe_Values.Look(ref ProtectColonyAnimals, "protectColonyAnimals");
             Scribe_Values.Look(ref IgnoreShieldedPawns, "ignoreShieldedPawns", true);
