@@ -21,6 +21,10 @@ namespace AvoidFriendlyFire
             IntVec3 candidateCell,
             float radiusAtTarget)
         {
+            // Skip close-to-shooter cells: friendly fire near the shooter is already excluded in the
+            // exact LoS cone (close-range filter). Starting the capsule a few cells forward reduces
+            // false positives that trigger exact cone building.
+            const float capsuleStartOffsetCells = 3f;
             const float radiusAtOrigin = 1f;
 
             float originX = originCell.x;
@@ -37,6 +41,30 @@ namespace AvoidFriendlyFire
             float originToPointZ = pointZ - originZ;
 
             float segmentLengthSquared = segmentVectorX * segmentVectorX + segmentVectorZ * segmentVectorZ;
+            if (segmentLengthSquared <= 0.0001f)
+            {
+                float dx = originToPointX;
+                float dz = originToPointZ;
+                return (dx * dx + dz * dz) <= (radiusAtOrigin * radiusAtOrigin);
+            }
+
+            // Move the capsule start point forward along the segment by a fixed number of cells.
+            float segmentLength = (float)Math.Sqrt(segmentLengthSquared);
+            float startOffset = capsuleStartOffsetCells;
+            if (startOffset > segmentLength)
+                startOffset = segmentLength;
+
+            float segmentDirectionX = segmentVectorX / segmentLength;
+            float segmentDirectionZ = segmentVectorZ / segmentLength;
+            originX += segmentDirectionX * startOffset;
+            originZ += segmentDirectionZ * startOffset;
+
+            // Recompute vectors from the shifted origin.
+            segmentVectorX = targetX - originX;
+            segmentVectorZ = targetZ - originZ;
+            originToPointX = pointX - originX;
+            originToPointZ = pointZ - originZ;
+            segmentLengthSquared = segmentVectorX * segmentVectorX + segmentVectorZ * segmentVectorZ;
             if (segmentLengthSquared <= 0.0001f)
             {
                 float dx = originToPointX;

@@ -70,10 +70,19 @@ namespace AvoidFriendlyFire
             if (!TryGetCachedFireConeFor(fireProperties, out cachedFireCone))
             {
                 var approximateMissRadius = fireProperties.GetApproximateMissRadius();
-                var capsuleFoundPawn = AreAnyRelevantPawnsInApproximateDangerZone(
-                    fireProperties,
-                    approximateMissRadius,
-                    _relevantPawnsCache);
+                var capsulePrefilterScope = PerfMetrics.Measure(PerfSection.CapsulePrefilter);
+                bool capsuleFoundPawn;
+                try
+                {
+                    capsuleFoundPawn = AreAnyRelevantPawnsInApproximateDangerZone(
+                        fireProperties,
+                        approximateMissRadius,
+                        _relevantPawnsCache);
+                }
+                finally
+                {
+                    capsulePrefilterScope.Dispose();
+                }
 
                 if (!capsuleFoundPawn)
                 {

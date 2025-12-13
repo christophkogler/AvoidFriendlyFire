@@ -22,6 +22,7 @@ namespace AvoidFriendlyFire
         Patch_Verb_CanHitTargetFrom = 12,
         Patch_AttackTargetFinder_BestAttackTarget = 13,
         Patch_Targeter_TargeterUpdate = 14,
+        CapsulePrefilter = 15,
     }
 
     public enum PerfCounter
@@ -60,6 +61,7 @@ namespace AvoidFriendlyFire
             "Patch:Verb.CanHitTargetFrom",
             "Patch:AttackTargetFinder.BestAttackTarget",
             "Patch:Targeter.TargeterUpdate",
+            "CapsulePrefilter",
         };
 
         private static readonly string[] CounterNames =
