@@ -15,6 +15,10 @@ namespace AvoidFriendlyFire
 
         private int _perTickCacheTick = -1;
 
+        private readonly List<Pawn> _relevantPawnsCache = new List<Pawn>();
+
+        private int _relevantPawnsCacheTick = -1;
+
         private readonly Dictionary<int, Dictionary<int, CachedFireCone>> _cachedFireCones
             = new Dictionary<int, Dictionary<int, CachedFireCone>>();
 
@@ -42,33 +46,31 @@ namespace AvoidFriendlyFire
             {
                 if (!cachedResult.IsSafe)
                 {
-                    var pawns = casterMap.mapPawns?.AllPawnsSpawned;
-                    if (pawns != null && cachedResult.BlockerPawnThingId != 0)
+                    var blockerPawn = cachedResult.BlockerPawn;
+                    if (blockerPawn != null &&
+                        blockerPawn.Spawned &&
+                        !blockerPawn.Dead &&
+                        blockerPawn.Map == casterMap)
                     {
-                        for (int i = 0; i < pawns.Count; i++)
-                        {
-                            var candidate = pawns[i];
-                            if (candidate != null && candidate.thingIDNumber == cachedResult.BlockerPawnThingId)
-                            {
-                                Main.Instance.PawnStatusTracker.AddBlockedShooter(fireProperties.Caster, candidate);
-                                break;
-                            }
-                        }
+                        Main.Instance.PawnStatusTracker.AddBlockedShooter(fireProperties.Caster, blockerPawn);
                     }
                 }
 
                 return cachedResult.IsSafe;
             }
 
+            EnsureRelevantPawnsCacheFresh(casterMap);
+
             HashSet<int> cachedFireCone;
             bool originAlreadyAdjusted = false;
+
+            fireProperties.AdjustForLeaning();
+            originAlreadyAdjusted = true;
+
             if (!TryGetCachedFireConeFor(fireProperties, out cachedFireCone))
             {
-                fireProperties.AdjustForLeaning();
-                originAlreadyAdjusted = true;
-
                 var approximateMissRadius = fireProperties.GetApproximateMissRadius();
-                if (!AreAnyRelevantPawnsInApproximateDangerZone(fireProperties, approximateMissRadius))
+                if (!AreAnyRelevantPawnsInApproximateDangerZone(fireProperties, approximateMissRadius, _relevantPawnsCache))
                 {
                     _perTickSafeShotCache[perTickSafetyKey] = PerTickSafetyResult.Safe();
                     return true;
@@ -82,8 +84,7 @@ namespace AvoidFriendlyFire
                 return true;
             }
 
-            var allPawnsSpawned = casterMap.mapPawns?.AllPawnsSpawned;
-            if (allPawnsSpawned == null || allPawnsSpawned.Count == 0)
+            if (_relevantPawnsCache.Count == 0)
             {
                 _perTickSafeShotCache[perTickSafetyKey] = PerTickSafetyResult.Safe();
                 return true;
@@ -94,12 +95,9 @@ namespace AvoidFriendlyFire
             var targetCell = fireProperties.Target;
             var shooterPawn = fireProperties.Caster;
 
-            for (int pawnIndex = 0; pawnIndex < allPawnsSpawned.Count; pawnIndex++)
+            for (int pawnIndex = 0; pawnIndex < _relevantPawnsCache.Count; pawnIndex++)
             {
-                Pawn candidatePawn = allPawnsSpawned[pawnIndex];
-                if (candidatePawn == null || candidatePawn.RaceProps == null || candidatePawn.Dead)
-                    continue;
-
+                Pawn candidatePawn = _relevantPawnsCache[pawnIndex];
                 if (candidatePawn == shooterPawn)
                     continue;
 
@@ -110,25 +108,8 @@ namespace AvoidFriendlyFire
                 if (!fireCone.Contains(candidateCellIndex))
                     continue;
 
-                var candidateFaction = candidatePawn.Faction;
-                if (candidateFaction == null)
-                    continue;
-
-                if (candidatePawn.RaceProps.Humanlike)
-                {
-                    if (candidatePawn.IsPrisoner || candidatePawn.HostileTo(Faction.OfPlayer))
-                        continue;
-                }
-                else if (!ShouldProtectAnimal(candidatePawn))
-                {
-                    continue;
-                }
-
-                if (IsPawnWearingUsefulShield(candidatePawn))
-                    continue;
-
                 Main.Instance.PawnStatusTracker.AddBlockedShooter(shooterPawn, candidatePawn);
-                _perTickSafeShotCache[perTickSafetyKey] = PerTickSafetyResult.Unsafe(candidatePawn.thingIDNumber);
+                _perTickSafeShotCache[perTickSafetyKey] = PerTickSafetyResult.Unsafe(candidatePawn);
                 return false;
             }
 
@@ -141,11 +122,12 @@ namespace AvoidFriendlyFire
             }
         }
 
-        private bool AreAnyRelevantPawnsInApproximateDangerZone(FireProperties fireProperties, float missRadiusCells)
+        private static bool AreAnyRelevantPawnsInApproximateDangerZone(
+            FireProperties fireProperties,
+            float missRadiusCells,
+            List<Pawn> relevantPawns)
         {
-            var map = fireProperties.CasterMap;
-            var allPawnsSpawned = map.mapPawns?.AllPawnsSpawned;
-            if (allPawnsSpawned == null || allPawnsSpawned.Count == 0)
+            if (relevantPawns.Count == 0)
                 return false;
 
             var shooterPawn = fireProperties.Caster;
@@ -154,12 +136,9 @@ namespace AvoidFriendlyFire
 
             var radiusAtTarget = missRadiusCells + 1.5f;
 
-            for (int pawnIndex = 0; pawnIndex < allPawnsSpawned.Count; pawnIndex++)
+            for (int pawnIndex = 0; pawnIndex < relevantPawns.Count; pawnIndex++)
             {
-                Pawn candidatePawn = allPawnsSpawned[pawnIndex];
-                if (candidatePawn == null || candidatePawn.RaceProps == null || candidatePawn.Dead)
-                    continue;
-
+                Pawn candidatePawn = relevantPawns[pawnIndex];
                 if (candidatePawn == shooterPawn)
                     continue;
 
@@ -167,6 +146,31 @@ namespace AvoidFriendlyFire
                     continue;
 
                 if (!IsCellWithinApproximateTaperedCapsule(originCell, targetCell, candidatePawn.Position, radiusAtTarget))
+                    continue;
+
+                return true;
+            }
+
+            return false;
+        }
+
+        private void EnsureRelevantPawnsCacheFresh(Map map)
+        {
+            var currentTick = Find.TickManager?.TicksGame ?? -1;
+            if (currentTick == _relevantPawnsCacheTick)
+                return;
+
+            _relevantPawnsCacheTick = currentTick;
+            _relevantPawnsCache.Clear();
+
+            var allPawnsSpawned = map.mapPawns?.AllPawnsSpawned;
+            if (allPawnsSpawned == null || allPawnsSpawned.Count == 0)
+                return;
+
+            for (int pawnIndex = 0; pawnIndex < allPawnsSpawned.Count; pawnIndex++)
+            {
+                Pawn candidatePawn = allPawnsSpawned[pawnIndex];
+                if (candidatePawn == null || candidatePawn.RaceProps == null || candidatePawn.Dead)
                     continue;
 
                 var candidateFaction = candidatePawn.Faction;
@@ -186,10 +190,8 @@ namespace AvoidFriendlyFire
                 if (IsPawnWearingUsefulShield(candidatePawn))
                     continue;
 
-                return true;
+                _relevantPawnsCache.Add(candidatePawn);
             }
-
-            return false;
         }
 
         // Fast approximation: treat the shot path as a 2D segment (x/z) and the "danger zone" as a
@@ -328,22 +330,22 @@ namespace AvoidFriendlyFire
         private readonly struct PerTickSafetyResult
         {
             public readonly bool IsSafe;
-            public readonly int BlockerPawnThingId;
+            public readonly Pawn BlockerPawn;
 
-            private PerTickSafetyResult(bool isSafe, int blockerPawnThingId)
+            private PerTickSafetyResult(bool isSafe, Pawn blockerPawn)
             {
                 IsSafe = isSafe;
-                BlockerPawnThingId = blockerPawnThingId;
+                BlockerPawn = blockerPawn;
             }
 
             public static PerTickSafetyResult Safe()
             {
-                return new PerTickSafetyResult(true, 0);
+                return new PerTickSafetyResult(true, null);
             }
 
-            public static PerTickSafetyResult Unsafe(int blockerPawnThingId)
+            public static PerTickSafetyResult Unsafe(Pawn blockerPawn)
             {
-                return new PerTickSafetyResult(false, blockerPawnThingId);
+                return new PerTickSafetyResult(false, blockerPawn);
             }
         }
 
