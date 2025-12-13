@@ -24,6 +24,12 @@ namespace AvoidFriendlyFire
         Patch_Targeter_TargeterUpdate = 14,
     }
 
+    public enum PerfCounter
+    {
+        CapsuleHitPawn = 0,
+        ExactConeBuiltAfterCapsuleHit = 1,
+    }
+
     public static class PerfMetrics
     {
         private const int TicksPerWindow = 60;
@@ -34,6 +40,8 @@ namespace AvoidFriendlyFire
 
         private static readonly long[] ElapsedStopwatchTicksBySection = new long[Enum.GetValues(typeof(PerfSection)).Length];
         private static readonly int[] CallCountBySection = new int[Enum.GetValues(typeof(PerfSection)).Length];
+
+        private static readonly int[] CounterValues = new int[Enum.GetValues(typeof(PerfCounter)).Length];
 
         private static readonly string[] SectionNames =
         {
@@ -54,6 +62,12 @@ namespace AvoidFriendlyFire
             "Patch:Targeter.TargeterUpdate",
         };
 
+        private static readonly string[] CounterNames =
+        {
+            "CapsuleHitPawn",
+            "ExactConeBuiltAfterCapsuleHit",
+        };
+
         public static void SetEnabled(bool enabled)
         {
             _enabled = enabled;
@@ -69,6 +83,14 @@ namespace AvoidFriendlyFire
                 return default;
 
             return new Scope(section, Stopwatch.GetTimestamp());
+        }
+
+        public static void IncrementCounter(PerfCounter counter, int amount = 1)
+        {
+            if (!_enabled)
+                return;
+
+            CounterValues[(int)counter] += amount;
         }
 
         public static void OnWorldTick(int currentTick)
@@ -125,6 +147,21 @@ namespace AvoidFriendlyFire
                 builder.Append(')');
             }
 
+            for (var i = 0; i < CounterValues.Length; i++)
+            {
+                var count = CounterValues[i];
+                if (count == 0)
+                    continue;
+
+                builder.Append("; ");
+                builder.Append(CounterNames[i]);
+                builder.Append('=');
+                builder.Append(count);
+                builder.Append(" (");
+                builder.Append((count / (double)tickWindowSize).ToString("0.00"));
+                builder.Append("/tick)");
+            }
+
             Log.Message(builder.ToString());
         }
 
@@ -134,6 +171,7 @@ namespace AvoidFriendlyFire
             _windowStartTick = 0;
             Array.Clear(ElapsedStopwatchTicksBySection, 0, ElapsedStopwatchTicksBySection.Length);
             Array.Clear(CallCountBySection, 0, CallCountBySection.Length);
+            Array.Clear(CounterValues, 0, CounterValues.Length);
         }
 
         public readonly struct Scope
@@ -163,4 +201,3 @@ namespace AvoidFriendlyFire
         }
     }
 }
-

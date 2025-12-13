@@ -11,6 +11,7 @@ namespace AvoidFriendlyFire
         public bool ModEnabled = true;
         public bool ShowOverlay = true;
         public bool PerfLoggingEnabled;
+        public bool OverlayShowCapsule;
         public bool ProtectPets = true;
         public bool ProtectColonyAnimals;
         public bool IgnoreShieldedPawns = true;
@@ -25,6 +26,7 @@ namespace AvoidFriendlyFire
             Scribe_Values.Look(ref ModEnabled, "enabled", true);
             Scribe_Values.Look(ref ShowOverlay, "showOverlay", true);
             Scribe_Values.Look(ref PerfLoggingEnabled, "perfLoggingEnabled");
+            Scribe_Values.Look(ref OverlayShowCapsule, "overlayShowCapsule");
             Scribe_Values.Look(ref ProtectPets, "protectPets", true);
             Scribe_Values.Look(ref ProtectColonyAnimals, "protectColonyAnimals");
             Scribe_Values.Look(ref IgnoreShieldedPawns, "ignoreShieldedPawns", true);
@@ -77,6 +79,8 @@ namespace AvoidFriendlyFire
                 "FALCFF.ShowTargetingOverlayDesc".Translate());
             listing.CheckboxLabeled("Perf logging (avg over 60 ticks)", ref _settings.PerfLoggingEnabled,
                 "Writes 1 line to the log per 60 ticks with per-section timings.");
+            listing.CheckboxLabeled("Overlay: show capsule approximation", ref _settings.OverlayShowCapsule,
+                "Draws the fast capsule approximation instead of the exact LoS cone.");
             listing.CheckboxLabeled("FALCFF.ProtectPets".Translate(), ref _settings.ProtectPets,
                 "FALCFF.ProtectPetsDesc".Translate());
             listing.CheckboxLabeled("FALCFF.ProtectColonyAnimals".Translate(), ref _settings.ProtectColonyAnimals,
@@ -265,6 +269,11 @@ namespace AvoidFriendlyFire
         public bool IsModEnabled()
         {
             return _settings.ModEnabled;
+        }
+
+        public bool ShouldOverlayShowCapsule()
+        {
+            return _settings.OverlayShowCapsule;
         }
     }
 }

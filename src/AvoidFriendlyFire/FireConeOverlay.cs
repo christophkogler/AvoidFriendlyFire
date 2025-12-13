@@ -113,7 +113,9 @@ namespace AvoidFriendlyFire
                 return;
 
             var fireProperties = new FireProperties(pawn, targetCell);
-            _fireCone = FireCalculations.GetFireCone(fireProperties);
+            _fireCone = Main.Instance.ShouldOverlayShowCapsule()
+                ? FireCalculations.GetApproximateFireCone(fireProperties)
+                : FireCalculations.GetFireCone(fireProperties);
             }
             finally
             {
