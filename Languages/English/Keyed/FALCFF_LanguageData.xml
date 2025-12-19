@@ -24,6 +24,9 @@
   <FALCFF.UseFarSideFilter>Use far-side filter</FALCFF.UseFarSideFilter>
   <FALCFF.UseFarSideFilterDesc>Only sample miss offsets on the far side of the target relative to the shooter. Can reduce checks but may miss rare lines of fire.</FALCFF.UseFarSideFilterDesc>
 
+  <FALCFF.UseCapsuleOnlyCheck>Use capsule-only safety check</FALCFF.UseCapsuleOnlyCheck>
+  <FALCFF.UseCapsuleOnlyCheckDesc>Skip the precise cone check and rely only on the fast capsule approximation. Faster but more conservative.</FALCFF.UseCapsuleOnlyCheckDesc>
+
   <FALCFF.MinCheckedDiskWidth>Minimum checked disk width (cells)</FALCFF.MinCheckedDiskWidth>
   <FALCFF.MinCheckedDiskWidthDesc>Thickness of the outer ring of offsets to check. Larger values increase accuracy but may impact performance. When this width is greater than or equal to the miss radius, the full disk is checked.</FALCFF.MinCheckedDiskWidthDesc>
 </LanguageData>

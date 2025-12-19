@@ -18,6 +18,7 @@ namespace AvoidFriendlyFire
         public bool EnableWhenUndrafted;
         public bool EnableAccurateMissRadius = true;
         public bool UseFarSideFilter = true;
+        public bool UseCapsuleOnlyCheck;
         public int MinCheckedDiskWidth = 1;
 
         public override void ExposeData()
@@ -33,6 +34,7 @@ namespace AvoidFriendlyFire
             Scribe_Values.Look(ref EnableWhenUndrafted, "enableWhenUndrafted");
             Scribe_Values.Look(ref EnableAccurateMissRadius, "enableAccurateMissRadius", true);
             Scribe_Values.Look(ref UseFarSideFilter, "useFarSideFilter", true);
+            Scribe_Values.Look(ref UseCapsuleOnlyCheck, "useCapsuleOnlyCheck", false);
             Scribe_Values.Look(ref MinCheckedDiskWidth, "minCheckedDiskWidth", 1);
         }
     }
@@ -93,6 +95,8 @@ namespace AvoidFriendlyFire
                 ref _settings.EnableAccurateMissRadius, "FALCFF.EnableAccurateMissRadiusDesc".Translate());
             listing.CheckboxLabeled("FALCFF.UseFarSideFilter".Translate(), ref _settings.UseFarSideFilter,
                 "FALCFF.UseFarSideFilterDesc".Translate());
+            listing.CheckboxLabeled("FALCFF.UseCapsuleOnlyCheck".Translate(), ref _settings.UseCapsuleOnlyCheck,
+                "FALCFF.UseCapsuleOnlyCheckDesc".Translate());
 
             listing.Label("FALCFF.MinCheckedDiskWidth".Translate() + $": {GetMinCheckedDiskWidth()}");
             listing.Label("FALCFF.MinCheckedDiskWidthDesc".Translate());
@@ -226,6 +230,11 @@ namespace AvoidFriendlyFire
         public bool ShouldUseFarSideFilter()
         {
             return _settings.UseFarSideFilter;
+        }
+
+        public bool ShouldUseCapsuleOnlyCheck()
+        {
+            return _settings.UseCapsuleOnlyCheck;
         }
 
         public int GetMinCheckedDiskWidth()

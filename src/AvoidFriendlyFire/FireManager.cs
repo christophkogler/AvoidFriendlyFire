@@ -67,14 +67,33 @@ namespace AvoidFriendlyFire
             fireProperties.AdjustForLeaning();
             originAlreadyAdjusted = true;
 
+            if (Main.Instance.ShouldUseCapsuleOnlyCheck())
+            {
+                var approximateMissRadius = fireProperties.GetApproximateMissRadius();
+                var capsuleBlockingPawn = TryGetRelevantPawnInApproximateDangerZone(
+                    fireProperties,
+                    approximateMissRadius,
+                    _relevantPawnsCache);
+
+                if (capsuleBlockingPawn == null)
+                {
+                    _perTickSafeShotCache[perTickSafetyKey] = PerTickSafetyResult.Safe();
+                    return true;
+                }
+
+                Main.Instance.PawnStatusTracker.AddBlockedShooter(fireProperties.Caster, capsuleBlockingPawn);
+                _perTickSafeShotCache[perTickSafetyKey] = PerTickSafetyResult.Unsafe(capsuleBlockingPawn);
+                return false;
+            }
+
             if (!TryGetCachedFireConeFor(fireProperties, out cachedFireCone))
             {
                 var approximateMissRadius = fireProperties.GetApproximateMissRadius();
                 var capsulePrefilterScope = PerfMetrics.Measure(PerfSection.CapsulePrefilter);
-                bool capsuleFoundPawn;
+                Pawn capsuleBlockingPawn;
                 try
                 {
-                    capsuleFoundPawn = AreAnyRelevantPawnsInApproximateDangerZone(
+                    capsuleBlockingPawn = TryGetRelevantPawnInApproximateDangerZone(
                         fireProperties,
                         approximateMissRadius,
                         _relevantPawnsCache);
@@ -84,7 +103,7 @@ namespace AvoidFriendlyFire
                     capsulePrefilterScope.Dispose();
                 }
 
-                if (!capsuleFoundPawn)
+                if (capsuleBlockingPawn == null)
                 {
                     _perTickSafeShotCache[perTickSafetyKey] = PerTickSafetyResult.Safe();
                     return true;
@@ -139,13 +158,13 @@ namespace AvoidFriendlyFire
             }
         }
 
-        private static bool AreAnyRelevantPawnsInApproximateDangerZone(
+        private static Pawn TryGetRelevantPawnInApproximateDangerZone(
             FireProperties fireProperties,
             float missRadiusCells,
             List<Pawn> relevantPawns)
         {
             if (relevantPawns.Count == 0)
-                return false;
+                return null;
 
             var shooterPawn = fireProperties.Caster;
             var originCell = fireProperties.Origin;
@@ -165,10 +184,10 @@ namespace AvoidFriendlyFire
                 if (!FireCalculations.IsCellWithinApproximateTaperedCapsule(originCell, targetCell, candidatePawn.Position, radiusAtTarget))
                     continue;
 
-                return true;
+                return candidatePawn;
             }
 
-            return false;
+            return null;
         }
 
         private void EnsureRelevantPawnsCacheFresh(Map map)
