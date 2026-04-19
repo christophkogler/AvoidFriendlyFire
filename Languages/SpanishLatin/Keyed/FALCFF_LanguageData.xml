@@ -17,4 +17,10 @@
 
   <FALCFF.EnableWhenUndrafted>Reactivar siempre que no se esté peleando</FALCFF.EnableWhenUndrafted>
   <FALCFF.EnableWhenUndraftedDesc>Si tiende a desactivar la opción "Avoid Friendly Fire" en colonos durante el combate, al usar esta opción se asegura de que siempre vuelva a activarse de nuevo cuando no estén en combate.</FALCFF.EnableWhenUndraftedDesc>
+
+  <FALCFF.EnableTurretControl>Enable turret control</FALCFF.EnableTurretControl>
+  <FALCFF.EnableTurretControlDesc>Allow Avoid Friendly Fire to control player turrets. This is off by default. When enabled, each turret gets its own toggle gizmo.</FALCFF.EnableTurretControlDesc>
+
+  <FALCFF.AvoidFriendlyFireTurret>Avoid Friendly Fire</FALCFF.AvoidFriendlyFireTurret>
+  <FALCFF.AvoidFriendlyFireTurretDesc>Prevents this turret from firing when a friendly pawn could be hit by its shot.</FALCFF.AvoidFriendlyFireTurretDesc>
 </LanguageData>

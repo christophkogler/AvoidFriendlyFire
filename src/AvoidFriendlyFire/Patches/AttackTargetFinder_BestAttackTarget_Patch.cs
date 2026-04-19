@@ -19,12 +19,24 @@ namespace AvoidFriendlyFire
             if (validator != null)
                 return true;
 
-            var shooter = searcher.Thing as Pawn;
-            if (!Main.Instance.GetExtendedDataStorage().ShouldPawnAvoidFriendlyFire(shooter))
+            var shooterThing = searcher.Thing;
+            if (shooterThing is Pawn shooterPawn)
+            {
+                if (!Main.Instance.GetExtendedDataStorage().ShouldPawnAvoidFriendlyFire(shooterPawn))
+                    return true;
+
+                var shooterVerb = FireProperties.GetEquippedWeaponVerb(shooterPawn);
+                validator = target => Main.Instance.GetFireManager().CanHitTargetSafely(
+                    new FireProperties(shooterPawn, shooterVerb, target.Position));
+                return true;
+            }
+
+            if (!Main.Instance.GetExtendedDataStorage().ShouldTurretAvoidFriendlyFire(shooterThing))
                 return true;
 
+            var turretVerb = ExtendedDataStorage.GetTurretVerb(shooterThing);
             validator = target => Main.Instance.GetFireManager().CanHitTargetSafely(
-                new FireProperties(shooter, target.Position));
+                new FireProperties(shooterThing, turretVerb, target.Position));
 
             return true;
             }

@@ -18,6 +18,12 @@
   <FALCFF.EnableWhenUndrafted>Always enable when undrafted</FALCFF.EnableWhenUndrafted>
   <FALCFF.EnableWhenUndraftedDesc>If you tend to disable the 'Avoid Friendly Fire' setting on pawns during combat, using this option will ensure it is always turned back on again when they are undrafted.</FALCFF.EnableWhenUndraftedDesc>
 
+  <FALCFF.EnableTurretControl>Enable turret control</FALCFF.EnableTurretControl>
+  <FALCFF.EnableTurretControlDesc>Allow Avoid Friendly Fire to control player turrets. This is off by default. When enabled, each turret gets its own toggle gizmo.</FALCFF.EnableTurretControlDesc>
+
+  <FALCFF.AvoidFriendlyFireTurret>Avoid Friendly Fire</FALCFF.AvoidFriendlyFireTurret>
+  <FALCFF.AvoidFriendlyFireTurretDesc>Prevents this turret from firing when a friendly pawn could be hit by its shot.</FALCFF.AvoidFriendlyFireTurretDesc>
+
   <FALCFF.EnableAccurateMissRadius>Use accurate miss radius</FALCFF.EnableAccurateMissRadius>
   <FALCFF.EnableAccurateMissRadiusDesc>Low skill shooters have a larger miss radius than higher skilled ones and this mod accounts for that. If this setting is disabled, the mod will assume a one tile miss radius for all shooters, which will be more lenient to low skill shooters but may result in more friendly fire hits.</FALCFF.EnableAccurateMissRadiusDesc>
 

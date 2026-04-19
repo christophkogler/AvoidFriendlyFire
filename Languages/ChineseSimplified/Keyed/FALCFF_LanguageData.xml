@@ -17,4 +17,10 @@
 
   <FALCFF.EnableWhenUndrafted>未征兵时始终启用</FALCFF.EnableWhenUndrafted>
   <FALCFF.EnableWhenUndraftedDesc>如果您在战斗中频繁禁用“禁用同伴射击”的设定，则使用此选项。如果未征兵，则始终启用禁止误伤。</FALCFF.EnableWhenUndraftedDesc>
+
+  <FALCFF.EnableTurretControl>Enable turret control</FALCFF.EnableTurretControl>
+  <FALCFF.EnableTurretControlDesc>Allow Avoid Friendly Fire to control player turrets. This is off by default. When enabled, each turret gets its own toggle gizmo.</FALCFF.EnableTurretControlDesc>
+
+  <FALCFF.AvoidFriendlyFireTurret>Avoid Friendly Fire</FALCFF.AvoidFriendlyFireTurret>
+  <FALCFF.AvoidFriendlyFireTurretDesc>Prevents this turret from firing when a friendly pawn could be hit by its shot.</FALCFF.AvoidFriendlyFireTurretDesc>
 </LanguageData>
