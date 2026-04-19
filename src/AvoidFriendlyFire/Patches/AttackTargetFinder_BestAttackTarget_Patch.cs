@@ -25,7 +25,7 @@ namespace AvoidFriendlyFire
                 if (!Main.Instance.GetExtendedDataStorage().ShouldPawnAvoidFriendlyFire(shooterPawn))
                     return true;
 
-                var shooterVerb = FireProperties.GetEquippedWeaponVerb(shooterPawn);
+                var shooterVerb = FireProperties.GetRangedAttackVerb(shooterPawn);
                 validator = target => Main.Instance.GetFireManager().CanHitTargetSafely(
                     new FireProperties(shooterPawn, shooterVerb, target.Position));
                 return true;

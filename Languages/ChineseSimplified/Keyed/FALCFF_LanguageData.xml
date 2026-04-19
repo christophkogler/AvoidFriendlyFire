@@ -12,6 +12,9 @@
   <FALCFF.ProtectColonyAnimals>保护所有的宠物</FALCFF.ProtectColonyAnimals>
   <FALCFF.ProtectColonyAnimalsDesc>如果关闭，则只有经过了主人训练的动物才成为保护对象。选中此选项后，属于殖民地的所有宠物/家畜动物都将成为保护对象。但是在拥有多个家畜的低性能电脑上可能会出现性能问题。</FALCFF.ProtectColonyAnimalsDesc>
 
+  <FALCFF.ProtectPlayerMechs>Protect Player Mechs</FALCFF.ProtectPlayerMechs>
+  <FALCFF.ProtectPlayerMechsDesc>Always protect player-controlled mechanitor mechs from friendly fire checks, even when animal protection is disabled.</FALCFF.ProtectPlayerMechsDesc>
+
   <FALCFF.IgnoreShieldedPawns>忽略带有护盾的殖民者</FALCFF.IgnoreShieldedPawns>
   <FALCFF.IgnoreShieldedPawnsDesc>在至少有10%的能量下，射击者不会担心佩带护盾的殖民者在射击路径上。</FALCFF.IgnoreShieldedPawnsDesc>
 
@@ -20,6 +23,9 @@
 
   <FALCFF.EnableTurretControl>Enable turret control</FALCFF.EnableTurretControl>
   <FALCFF.EnableTurretControlDesc>Allow Avoid Friendly Fire to control player turrets. This is off by default. When enabled, each turret gets its own toggle gizmo.</FALCFF.EnableTurretControlDesc>
+
+  <FALCFF.EnableMechControl>Enable mech control</FALCFF.EnableMechControl>
+  <FALCFF.EnableMechControlDesc>Allow Avoid Friendly Fire to control player mechs. This is off by default. When enabled, each mech gets its own toggle gizmo and uses its built-in attack verb for safety checks.</FALCFF.EnableMechControlDesc>
 
   <FALCFF.AvoidFriendlyFireTurret>Avoid Friendly Fire</FALCFF.AvoidFriendlyFireTurret>
   <FALCFF.AvoidFriendlyFireTurretDesc>Prevents this turret from firing when a friendly pawn could be hit by its shot.</FALCFF.AvoidFriendlyFireTurretDesc>

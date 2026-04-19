@@ -12,6 +12,9 @@
   <FALCFF.ProtectColonyAnimals>Protect All Tame Animals</FALCFF.ProtectColonyAnimals>
   <FALCFF.ProtectColonyAnimalsDesc>Protect all tame animals belonging to the colony. May cause performance issues on lower end machines with large numbers of livestock.</FALCFF.ProtectColonyAnimalsDesc>
 
+  <FALCFF.ProtectPlayerMechs>Protect Player Mechs</FALCFF.ProtectPlayerMechs>
+  <FALCFF.ProtectPlayerMechsDesc>Always protect player-controlled mechanitor mechs from friendly fire checks, even when animal protection is disabled.</FALCFF.ProtectPlayerMechsDesc>
+
   <FALCFF.IgnoreShieldedPawns>Ignore pawns with active shield belts</FALCFF.IgnoreShieldedPawns>
   <FALCFF.IgnoreShieldedPawnsDesc>Shooters will not worry about pawns wearing a shield belt with at least 10% power standing in the line of fire.</FALCFF.IgnoreShieldedPawnsDesc>
 
@@ -20,6 +23,9 @@
 
   <FALCFF.EnableTurretControl>Enable turret control</FALCFF.EnableTurretControl>
   <FALCFF.EnableTurretControlDesc>Allow Avoid Friendly Fire to control player turrets. This is off by default. When enabled, each turret gets its own toggle gizmo.</FALCFF.EnableTurretControlDesc>
+
+  <FALCFF.EnableMechControl>Enable mech control</FALCFF.EnableMechControl>
+  <FALCFF.EnableMechControlDesc>Allow Avoid Friendly Fire to control player mechs. This is off by default. When enabled, each mech gets its own toggle gizmo and uses its built-in attack verb for safety checks.</FALCFF.EnableMechControlDesc>
 
   <FALCFF.AvoidFriendlyFireTurret>Avoid Friendly Fire</FALCFF.AvoidFriendlyFireTurret>
   <FALCFF.AvoidFriendlyFireTurretDesc>Prevents this turret from firing when a friendly pawn could be hit by its shot.</FALCFF.AvoidFriendlyFireTurretDesc>
