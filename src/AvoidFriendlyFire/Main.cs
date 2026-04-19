@@ -14,9 +14,11 @@ namespace AvoidFriendlyFire
         public bool OverlayShowCapsule;
         public bool ProtectPets = true;
         public bool ProtectColonyAnimals;
+        public bool ProtectPlayerMechs;
         public bool IgnoreShieldedPawns = true;
         public bool EnableWhenUndrafted;
         public bool EnableTurretControl;
+        public bool EnableMechControl;
         public bool EnableAccurateMissRadius = true;
         public bool UseFarSideFilter = true;
         public bool UseCapsuleOnlyCheck;
@@ -31,9 +33,11 @@ namespace AvoidFriendlyFire
             Scribe_Values.Look(ref OverlayShowCapsule, "overlayShowCapsule", false);
             Scribe_Values.Look(ref ProtectPets, "protectPets", true);
             Scribe_Values.Look(ref ProtectColonyAnimals, "protectColonyAnimals");
+            Scribe_Values.Look(ref ProtectPlayerMechs, "protectPlayerMechs");
             Scribe_Values.Look(ref IgnoreShieldedPawns, "ignoreShieldedPawns", true);
             Scribe_Values.Look(ref EnableWhenUndrafted, "enableWhenUndrafted");
             Scribe_Values.Look(ref EnableTurretControl, "enableTurretControl");
+            Scribe_Values.Look(ref EnableMechControl, "enableMechControl");
             Scribe_Values.Look(ref EnableAccurateMissRadius, "enableAccurateMissRadius", true);
             Scribe_Values.Look(ref UseFarSideFilter, "useFarSideFilter", true);
             Scribe_Values.Look(ref UseCapsuleOnlyCheck, "useCapsuleOnlyCheck", false);
@@ -89,12 +93,16 @@ namespace AvoidFriendlyFire
                 "FALCFF.ProtectPetsDesc".Translate());
             listing.CheckboxLabeled("FALCFF.ProtectColonyAnimals".Translate(), ref _settings.ProtectColonyAnimals,
                 "FALCFF.ProtectColonyAnimalsDesc".Translate());
+            listing.CheckboxLabeled("FALCFF.ProtectPlayerMechs".Translate(), ref _settings.ProtectPlayerMechs,
+                "FALCFF.ProtectPlayerMechsDesc".Translate());
             listing.CheckboxLabeled("FALCFF.IgnoreShieldedPawns".Translate(), ref _settings.IgnoreShieldedPawns,
                 "FALCFF.IgnoreShieldedPawnsDesc".Translate());
             listing.CheckboxLabeled("FALCFF.EnableWhenUndrafted".Translate(), ref _settings.EnableWhenUndrafted,
                 "FALCFF.EnableWhenUndraftedDesc".Translate());
             listing.CheckboxLabeled("FALCFF.EnableTurretControl".Translate(), ref _settings.EnableTurretControl,
                 "FALCFF.EnableTurretControlDesc".Translate());
+            listing.CheckboxLabeled("FALCFF.EnableMechControl".Translate(), ref _settings.EnableMechControl,
+                "FALCFF.EnableMechControlDesc".Translate());
             listing.CheckboxLabeled("FALCFF.EnableAccurateMissRadius".Translate(),
                 ref _settings.EnableAccurateMissRadius, "FALCFF.EnableAccurateMissRadiusDesc".Translate());
             listing.CheckboxLabeled("FALCFF.UseFarSideFilter".Translate(), ref _settings.UseFarSideFilter,
@@ -216,6 +224,11 @@ namespace AvoidFriendlyFire
             return _settings.ProtectColonyAnimals;
         }
 
+        public bool ShouldProtectPlayerMechs()
+        {
+            return _settings.ProtectPlayerMechs;
+        }
+
         public bool ShouldIgnoreShieldedPawns()
         {
             return _settings.IgnoreShieldedPawns;
@@ -229,6 +242,11 @@ namespace AvoidFriendlyFire
         public bool ShouldEnableTurretControl()
         {
             return _settings.EnableTurretControl;
+        }
+
+        public bool ShouldEnableMechControl()
+        {
+            return _settings.EnableMechControl;
         }
 
         public bool ShouldEnableAccurateMissRadius()

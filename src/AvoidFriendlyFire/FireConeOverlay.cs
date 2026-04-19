@@ -125,13 +125,13 @@ namespace AvoidFriendlyFire
 
         public static float GetEquippedWeaponRange(Pawn pawn)
         {
-            var primaryWeaponVerb = FireProperties.GetEquippedWeaponVerb(pawn);
+            var primaryWeaponVerb = FireProperties.GetRangedAttackVerb(pawn);
             return primaryWeaponVerb?.verbProps.range ?? 0;
         }
 
         public static bool HasValidWeapon(Pawn pawn)
         {
-            return HasValidWeapon(FireProperties.GetEquippedWeaponVerb(pawn));
+            return HasValidWeapon(FireProperties.GetRangedAttackVerb(pawn));
         }
 
         public static bool HasValidWeapon(Verb weaponVerb)

@@ -54,7 +54,13 @@ namespace AvoidFriendlyFire
 
         public bool CanTrackPawn(Pawn pawn)
         {
-            return pawn?.Faction != null && pawn.Faction == Faction.OfPlayer;
+            if (pawn?.Faction != Faction.OfPlayer)
+                return false;
+
+            if (pawn.IsColonyMechPlayerControlled && !Main.Instance.ShouldEnableMechControl())
+                return false;
+
+            return true;
         }
 
         public bool ShouldPawnAvoidFriendlyFire(Pawn pawn)

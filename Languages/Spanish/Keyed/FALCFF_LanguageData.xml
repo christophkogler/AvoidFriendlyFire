@@ -12,6 +12,9 @@
   <FALCFF.ProtectColonyAnimals>Proteger a todos los animales domesticados</FALCFF.ProtectColonyAnimals>
   <FALCFF.ProtectColonyAnimalsDesc>Proteger a todos los animales domesticados de la colonia. Puede causar problemas de rendimiento en máquinas de gama baja con gran cantidad de ganado.</FALCFF.ProtectColonyAnimalsDesc>
 
+  <FALCFF.ProtectPlayerMechs>Protect Player Mechs</FALCFF.ProtectPlayerMechs>
+  <FALCFF.ProtectPlayerMechsDesc>Always protect player-controlled mechanitor mechs from friendly fire checks, even when animal protection is disabled.</FALCFF.ProtectPlayerMechsDesc>
+
   <FALCFF.IgnoreShieldedPawns>Ignorar colonos con un cinturón de protección activo</FALCFF.IgnoreShieldedPawns>
   <FALCFF.IgnoreShieldedPawnsDesc>Los tiradores no se preocuparán de que los peones usen un cinturón de protección con al menos un 10% de potencia dentro de la línea de tiro.</FALCFF.IgnoreShieldedPawnsDesc>
 
@@ -20,6 +23,9 @@
 
   <FALCFF.EnableTurretControl>Enable turret control</FALCFF.EnableTurretControl>
   <FALCFF.EnableTurretControlDesc>Allow Avoid Friendly Fire to control player turrets. This is off by default. When enabled, each turret gets its own toggle gizmo.</FALCFF.EnableTurretControlDesc>
+
+  <FALCFF.EnableMechControl>Enable mech control</FALCFF.EnableMechControl>
+  <FALCFF.EnableMechControlDesc>Allow Avoid Friendly Fire to control player mechs. This is off by default. When enabled, each mech gets its own toggle gizmo and uses its built-in attack verb for safety checks.</FALCFF.EnableMechControlDesc>
 
   <FALCFF.AvoidFriendlyFireTurret>Avoid Friendly Fire</FALCFF.AvoidFriendlyFireTurret>
   <FALCFF.AvoidFriendlyFireTurretDesc>Prevents this turret from firing when a friendly pawn could be hit by its shot.</FALCFF.AvoidFriendlyFireTurretDesc>

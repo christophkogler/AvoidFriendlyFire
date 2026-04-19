@@ -217,7 +217,10 @@ namespace AvoidFriendlyFire
                 if (candidateFaction == null)
                     continue;
 
-                if (candidatePawn.RaceProps.Humanlike)
+                if (candidatePawn.IsColonyMechPlayerControlled && Main.Instance.ShouldProtectPlayerMechs())
+                {
+                }
+                else if (candidatePawn.RaceProps.Humanlike)
                 {
                     if (candidatePawn.IsPrisoner || candidatePawn.HostileTo(Faction.OfPlayer))
                         continue;

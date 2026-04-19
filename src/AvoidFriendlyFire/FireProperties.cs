@@ -49,7 +49,7 @@ namespace AvoidFriendlyFire
         private readonly Verb _weaponVerb;
 
         public FireProperties(Pawn caster, IntVec3 target)
-            : this((Thing)caster, GetEquippedWeaponVerb(caster), target)
+            : this((Thing)caster, GetRangedAttackVerb(caster), target)
         {
         }
 
@@ -216,8 +216,19 @@ namespace AvoidFriendlyFire
                 : VerbUtility.CalculateAdjustedForcedMiss(ForcedMissRadius, Target - Origin);
         }
 
-        public static Verb GetEquippedWeaponVerb(Pawn pawn)
+        public static Verb GetRangedAttackVerb(Pawn pawn)
         {
+            if (pawn == null)
+                return null;
+
+            if (pawn.IsColonyMechPlayerControlled)
+            {
+                if (!Main.Instance.ShouldEnableMechControl())
+                    return null;
+
+                return pawn.TryGetAttackVerb(null, false);
+            }
+
             return pawn.equipment?.PrimaryEq?.PrimaryVerb;
         }
     }
