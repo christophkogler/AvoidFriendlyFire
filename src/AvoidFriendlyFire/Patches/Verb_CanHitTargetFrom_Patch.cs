@@ -15,7 +15,7 @@ namespace AvoidFriendlyFire
             if (!Main.Instance.IsModEnabled())
                 return;
 
-            if (!__result || !__instance.CasterIsPawn || !targ.IsValid)
+            if (!__result || !targ.IsValid)
                 return;
 
             if (targ.Thing != null && targ.Thing == __instance.caster)
@@ -24,12 +24,24 @@ namespace AvoidFriendlyFire
             if (root.DistanceTo(targ.Cell) <= 2f)
                 return;
 
-            var pawn = __instance.CasterPawn;
-            if (!Main.Instance.GetExtendedDataStorage().ShouldPawnAvoidFriendlyFire(pawn))
+            if (__instance.caster is Pawn pawn)
+            {
+                if (!Main.Instance.GetExtendedDataStorage().ShouldPawnAvoidFriendlyFire(pawn))
+                    return;
+
+                __result = Main.Instance.GetFireManager().CanHitTargetSafely(
+                    new FireProperties(pawn, __instance, targ.Cell));
+                return;
+            }
+
+            if (!(__instance.caster is Thing casterThing))
+                return;
+
+            if (!Main.Instance.GetExtendedDataStorage().ShouldTurretAvoidFriendlyFire(casterThing))
                 return;
 
             __result = Main.Instance.GetFireManager().CanHitTargetSafely(
-                new FireProperties(pawn, targ.Cell));
+                new FireProperties(casterThing, __instance, targ.Cell));
             }
             finally
             {

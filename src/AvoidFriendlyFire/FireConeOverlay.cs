@@ -131,7 +131,12 @@ namespace AvoidFriendlyFire
 
         public static bool HasValidWeapon(Pawn pawn)
         {
-            var primaryWeaponVerb = FireProperties.GetEquippedWeaponVerb(pawn);
+            return HasValidWeapon(FireProperties.GetEquippedWeaponVerb(pawn));
+        }
+
+        public static bool HasValidWeapon(Verb weaponVerb)
+        {
+            var primaryWeaponVerb = weaponVerb;
 
             if (primaryWeaponVerb?.verbProps?.defaultProjectile?.projectile == null)
                 return false;

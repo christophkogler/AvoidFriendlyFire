@@ -16,6 +16,7 @@ namespace AvoidFriendlyFire
         public bool ProtectColonyAnimals;
         public bool IgnoreShieldedPawns = true;
         public bool EnableWhenUndrafted;
+        public bool EnableTurretControl;
         public bool EnableAccurateMissRadius = true;
         public bool UseFarSideFilter = true;
         public bool UseCapsuleOnlyCheck;
@@ -32,6 +33,7 @@ namespace AvoidFriendlyFire
             Scribe_Values.Look(ref ProtectColonyAnimals, "protectColonyAnimals");
             Scribe_Values.Look(ref IgnoreShieldedPawns, "ignoreShieldedPawns", true);
             Scribe_Values.Look(ref EnableWhenUndrafted, "enableWhenUndrafted");
+            Scribe_Values.Look(ref EnableTurretControl, "enableTurretControl");
             Scribe_Values.Look(ref EnableAccurateMissRadius, "enableAccurateMissRadius", true);
             Scribe_Values.Look(ref UseFarSideFilter, "useFarSideFilter", true);
             Scribe_Values.Look(ref UseCapsuleOnlyCheck, "useCapsuleOnlyCheck", false);
@@ -91,6 +93,8 @@ namespace AvoidFriendlyFire
                 "FALCFF.IgnoreShieldedPawnsDesc".Translate());
             listing.CheckboxLabeled("FALCFF.EnableWhenUndrafted".Translate(), ref _settings.EnableWhenUndrafted,
                 "FALCFF.EnableWhenUndraftedDesc".Translate());
+            listing.CheckboxLabeled("FALCFF.EnableTurretControl".Translate(), ref _settings.EnableTurretControl,
+                "FALCFF.EnableTurretControlDesc".Translate());
             listing.CheckboxLabeled("FALCFF.EnableAccurateMissRadius".Translate(),
                 ref _settings.EnableAccurateMissRadius, "FALCFF.EnableAccurateMissRadiusDesc".Translate());
             listing.CheckboxLabeled("FALCFF.UseFarSideFilter".Translate(), ref _settings.UseFarSideFilter,
@@ -220,6 +224,11 @@ namespace AvoidFriendlyFire
         public bool ShouldEnableWhenUndrafted()
         {
             return _settings.EnableWhenUndrafted;
+        }
+
+        public bool ShouldEnableTurretControl()
+        {
+            return _settings.EnableTurretControl;
         }
 
         public bool ShouldEnableAccurateMissRadius()

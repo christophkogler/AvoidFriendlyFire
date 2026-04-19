@@ -40,15 +40,24 @@ namespace AvoidFriendlyFire
 
         public int TargetIndex => CasterMap.cellIndices.CellToIndex(Target);
 
-        public Pawn Caster { get; }
+        public Thing Caster { get; }
+
+        public Pawn CasterPawn => Caster as Pawn;
+
+        public int WeaponSourceId => _weaponVerb?.EquipmentSource?.thingIDNumber ?? 0;
 
         private readonly Verb _weaponVerb;
 
         public FireProperties(Pawn caster, IntVec3 target)
+            : this((Thing)caster, GetEquippedWeaponVerb(caster), target)
+        {
+        }
+
+        public FireProperties(Thing caster, Verb weaponVerb, IntVec3 target)
         {
             Target = target;
             Caster = caster;
-            _weaponVerb = GetEquippedWeaponVerb(caster);
+            _weaponVerb = weaponVerb;
             Origin = Caster.Position;
         }
 
@@ -87,7 +96,10 @@ namespace AvoidFriendlyFire
         {
             var distance = (Target - Origin).LengthHorizontal;
 
-            var factorFromShooterAndDist = ShotReport.HitFactorFromShooter(Caster, distance);
+            if (CasterPawn == null)
+                return 0f;
+
+            var factorFromShooterAndDist = ShotReport.HitFactorFromShooter(CasterPawn, distance);
 
             var factorFromEquipment = _weaponVerb.verbProps.GetHitChanceFactor(
                 _weaponVerb.EquipmentSource, distance);
@@ -121,6 +133,9 @@ namespace AvoidFriendlyFire
             var adjustedMissRadius = CalculateAdjustedForcedMiss();
             if (adjustedMissRadius > 0.5f)
                 return ForcedMissRadius;
+
+            if (CasterPawn == null)
+                return 2f;
 
             if (!Main.Instance.ShouldEnableAccurateMissRadius())
                 return 2f;
@@ -164,6 +179,9 @@ namespace AvoidFriendlyFire
                 int forcedMissRingCount = forcedMissOuterCount - forcedMissInnerCount;
                 return new MissAreaDescriptor(GenRadial.RadialPattern, forcedMissInnerCount, forcedMissRingCount);
             }
+
+            if (CasterPawn == null)
+                return new MissAreaDescriptor(GenAdj.AdjacentCells, 8);
 
             if (!Main.Instance.ShouldEnableAccurateMissRadius())
             {

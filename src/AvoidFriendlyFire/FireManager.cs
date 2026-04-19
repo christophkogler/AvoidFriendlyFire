@@ -35,7 +35,8 @@ namespace AvoidFriendlyFire
                 return true;
             }
 
-            Main.Instance.PawnStatusTracker.Remove(fireProperties.Caster);
+            if (fireProperties.CasterPawn != null)
+                Main.Instance.PawnStatusTracker.Remove(fireProperties.CasterPawn);
 
             EnsurePerTickCacheFresh();
 
@@ -52,7 +53,8 @@ namespace AvoidFriendlyFire
                         !blockerPawn.Dead &&
                         blockerPawn.Map == casterMap)
                     {
-                        Main.Instance.PawnStatusTracker.AddBlockedShooter(fireProperties.Caster, blockerPawn);
+                        if (fireProperties.CasterPawn != null)
+                            Main.Instance.PawnStatusTracker.AddBlockedShooter(fireProperties.CasterPawn, blockerPawn);
                     }
                 }
 
@@ -81,7 +83,8 @@ namespace AvoidFriendlyFire
                     return true;
                 }
 
-                Main.Instance.PawnStatusTracker.AddBlockedShooter(fireProperties.Caster, capsuleBlockingPawn);
+                if (fireProperties.CasterPawn != null)
+                    Main.Instance.PawnStatusTracker.AddBlockedShooter(fireProperties.CasterPawn, capsuleBlockingPawn);
                 _perTickSafeShotCache[perTickSafetyKey] = PerTickSafetyResult.Unsafe(capsuleBlockingPawn);
                 return false;
             }
@@ -129,7 +132,7 @@ namespace AvoidFriendlyFire
             var cellIndices = casterMap.cellIndices;
             var originCell = fireProperties.Origin;
             var targetCell = fireProperties.Target;
-            var shooterPawn = fireProperties.Caster;
+            var shooterPawn = fireProperties.CasterPawn;
 
             for (int pawnIndex = 0; pawnIndex < _relevantPawnsCache.Count; pawnIndex++)
             {
@@ -144,7 +147,8 @@ namespace AvoidFriendlyFire
                 if (!fireCone.Contains(candidateCellIndex))
                     continue;
 
-                Main.Instance.PawnStatusTracker.AddBlockedShooter(shooterPawn, candidatePawn);
+                if (shooterPawn != null)
+                    Main.Instance.PawnStatusTracker.AddBlockedShooter(shooterPawn, candidatePawn);
                 _perTickSafeShotCache[perTickSafetyKey] = PerTickSafetyResult.Unsafe(candidatePawn);
                 return false;
             }
@@ -166,7 +170,7 @@ namespace AvoidFriendlyFire
             if (relevantPawns.Count == 0)
                 return null;
 
-            var shooterPawn = fireProperties.Caster;
+            var shooterPawn = fireProperties.CasterPawn;
             var originCell = fireProperties.Origin;
             var targetCell = fireProperties.Target;
 
@@ -263,17 +267,16 @@ namespace AvoidFriendlyFire
 
         private static PerTickSafetyKey CreatePerTickSafetyKey(FireProperties fireProperties)
         {
-            var pawn = fireProperties.Caster;
+            var caster = fireProperties.Caster;
             var map = fireProperties.CasterMap;
-            var shooterPositionIndex = map.cellIndices.CellToIndex(pawn.Position);
-            var primaryWeaponId = pawn.equipment?.Primary?.thingIDNumber ?? 0;
+            var shooterPositionIndex = map.cellIndices.CellToIndex(caster.Position);
 
             return new PerTickSafetyKey(
                 map.uniqueID,
-                pawn.thingIDNumber,
+                caster.thingIDNumber,
                 shooterPositionIndex,
                 fireProperties.TargetIndex,
-                primaryWeaponId);
+                fireProperties.WeaponSourceId);
         }
 
         private readonly struct PerTickSafetyResult
