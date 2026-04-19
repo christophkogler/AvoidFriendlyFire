@@ -43,6 +43,13 @@
 - Increment the patch version (third number) in `AssemblyVersion` and `AssemblyFileVersion` in `src/AvoidFriendlyFire/Properties/AssemblyInfo.cs`.  
 - Update the `targetVersion` in `About/About.xml` to match the RimWorld version.
 
+### Creating a GitHub Release
+
+1. Build the mod so `1.6/Assemblies/1.6.dll` and `1.6/Assemblies/1.6.pdb` are up to date.
+2. Run `./scripts/make-release.sh` to bump the patch version, commit the version update, create a `vX.Y.Z` git tag, and write a release zip to `dist/`.
+3. Use `./scripts/make-release.sh --bump minor` or `--bump major` for larger version increments, or `--version X.Y.Z` to set an explicit version.
+4. Push the commit and tag, then attach the generated zip from `dist/` to a GitHub release.
+
 ## License
 
 This project is licensed under the [GPLv3](LICENSE.txt).
