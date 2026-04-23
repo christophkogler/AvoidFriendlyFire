@@ -12,6 +12,8 @@ namespace AvoidFriendlyFire
             var scope = PerfMetrics.Measure(PerfSection.Patch_Verb_CanHitTargetFrom);
             try
             {
+            using (FireProperties.SuppressDynamicPawnVerbLookup())
+            {
             if (!Main.Instance.IsModEnabled())
                 return;
 
@@ -26,7 +28,7 @@ namespace AvoidFriendlyFire
 
             if (__instance.caster is Pawn pawn)
             {
-                if (!Main.Instance.GetExtendedDataStorage().ShouldPawnAvoidFriendlyFire(pawn))
+                if (!Main.Instance.GetExtendedDataStorage().ShouldPawnAvoidFriendlyFire(pawn, __instance))
                     return;
 
                 __result = Main.Instance.GetFireManager().CanHitTargetSafely(
@@ -42,6 +44,7 @@ namespace AvoidFriendlyFire
 
             __result = Main.Instance.GetFireManager().CanHitTargetSafely(
                 new FireProperties(casterThing, __instance, targ.Cell));
+            }
             }
             finally
             {

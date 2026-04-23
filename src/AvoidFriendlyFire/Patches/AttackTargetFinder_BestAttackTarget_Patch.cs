@@ -22,10 +22,10 @@ namespace AvoidFriendlyFire
             var shooterThing = searcher.Thing;
             if (shooterThing is Pawn shooterPawn)
             {
-                if (!Main.Instance.GetExtendedDataStorage().ShouldPawnAvoidFriendlyFire(shooterPawn))
+                var shooterVerb = FireProperties.GetRangedAttackVerb(shooterPawn);
+                if (!Main.Instance.GetExtendedDataStorage().ShouldPawnAvoidFriendlyFire(shooterPawn, shooterVerb))
                     return true;
 
-                var shooterVerb = FireProperties.GetRangedAttackVerb(shooterPawn);
                 validator = target => Main.Instance.GetFireManager().CanHitTargetSafely(
                     new FireProperties(shooterPawn, shooterVerb, target.Position));
                 return true;

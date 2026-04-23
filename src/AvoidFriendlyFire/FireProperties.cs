@@ -28,6 +28,9 @@ namespace AvoidFriendlyFire
 
     public class FireProperties
     {
+        [ThreadStatic]
+        private static int _suppressDynamicPawnVerbLookupDepth;
+
         public IntVec3 Target;
 
         public Map CasterMap => Caster.Map;
@@ -226,10 +229,27 @@ namespace AvoidFriendlyFire
                 if (!Main.Instance.ShouldEnableMechControl())
                     return null;
 
+                if (_suppressDynamicPawnVerbLookupDepth > 0)
+                    return null;
+
                 return pawn.TryGetAttackVerb(null, false);
             }
 
             return pawn.equipment?.PrimaryEq?.PrimaryVerb;
+        }
+
+        public static IDisposable SuppressDynamicPawnVerbLookup()
+        {
+            _suppressDynamicPawnVerbLookupDepth++;
+            return new DynamicPawnVerbLookupSuppressionScope();
+        }
+
+        private sealed class DynamicPawnVerbLookupSuppressionScope : IDisposable
+        {
+            public void Dispose()
+            {
+                _suppressDynamicPawnVerbLookupDepth--;
+            }
         }
     }
 }
