@@ -65,13 +65,18 @@ namespace AvoidFriendlyFire
 
         public bool ShouldPawnAvoidFriendlyFire(Pawn pawn)
         {
+            return ShouldPawnAvoidFriendlyFire(pawn, FireProperties.GetRangedAttackVerb(pawn));
+        }
+
+        public bool ShouldPawnAvoidFriendlyFire(Pawn pawn, Verb weaponVerb)
+        {
             if (!CanTrackPawn(pawn))
                 return false;
 
             if (!GetExtendedDataFor(pawn).AvoidFriendlyFire)
                 return false;
 
-            if (!FireConeOverlay.HasValidWeapon(pawn))
+            if (!FireConeOverlay.HasValidWeapon(weaponVerb))
                 return false;
 
             return true;
