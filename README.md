@@ -42,7 +42,7 @@
 
 1. (Optional) Clone this repository into your `RimWorld/Mods` directory.  
 2. Open `src/AvoidFriendlyFire/AvoidFriendlyFire.sln` in Visual Studio 2022.  
-3. Build `1.6.csproj` to produce `1.6.dll` and `1.6.pdb`.  
+3. Build `1.6.csproj` to produce `AvoidFriendlyFire.dll` and `AvoidFriendlyFire.pdb`.
 4. Copy the output into `1.6/Assemblies` within the mod folder.
 
 ## License

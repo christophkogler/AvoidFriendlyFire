@@ -88,8 +88,11 @@ if [[ ! -x "${rsync_script}" ]]; then
   exit 1
 fi
 
-if [[ ! -f "${repo_root}/1.6/Assemblies/1.6.dll" ]]; then
-  echo "Missing build artifact ${repo_root}/1.6/Assemblies/1.6.dll" >&2
+assembly_dir="${repo_root}/1.6/Assemblies"
+assembly_dll="${assembly_dir}/AvoidFriendlyFire.dll"
+
+if [[ ! -f "${assembly_dll}" ]]; then
+  echo "Missing build artifact ${assembly_dll}" >&2
   echo "Build the mod before making a release." >&2
   exit 1
 fi
@@ -193,7 +196,7 @@ fi
 
 git -C "${repo_root}" tag "${tag_name}"
 
-"${rsync_script}" "${temp_root}" "${mod_name}"
+"${rsync_script}" "${temp_root}/Mods" "${mod_name}"
 (cd "${temp_root}/Mods" && zip -rq "${archive_path}" "${mod_name}")
 
 echo "Created release archive ${archive_path}"
