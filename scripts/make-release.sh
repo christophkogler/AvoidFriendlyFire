@@ -90,16 +90,9 @@ fi
 
 assembly_dir="${repo_root}/1.6/Assemblies"
 assembly_dll="${assembly_dir}/AvoidFriendlyFire.dll"
-assembly_pdb="${assembly_dir}/AvoidFriendlyFire.pdb"
 
 if [[ ! -f "${assembly_dll}" ]]; then
   echo "Missing build artifact ${assembly_dll}" >&2
-  echo "Build the mod before making a release." >&2
-  exit 1
-fi
-
-if [[ ! -f "${assembly_pdb}" ]]; then
-  echo "Missing debug symbols ${assembly_pdb}" >&2
   echo "Build the mod before making a release." >&2
   exit 1
 fi
