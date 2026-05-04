@@ -196,7 +196,7 @@ fi
 
 git -C "${repo_root}" tag "${tag_name}"
 
-"${rsync_script}" "${temp_root}" "${mod_name}"
+"${rsync_script}" "${temp_root}/Mods" "${mod_name}"
 (cd "${temp_root}/Mods" && zip -rq "${archive_path}" "${mod_name}")
 
 echo "Created release archive ${archive_path}"
